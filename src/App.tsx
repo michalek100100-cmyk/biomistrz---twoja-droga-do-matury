@@ -8,6 +8,10 @@ import QuizSession from './components/QuizSession';
 import ExamSection from './components/ExamSection';
 import CreatorSection from './components/CreatorSection';
 import ProfileSection from './components/ProfileSection';
+import BugReportButton from './components/BugReportButton';
+import FeedbackSection from './components/FeedbackSection'; // <--- Upewnij się, że masz ten plik
+import IntroScreen from './screens/IntroScreen';
+
 // Typy i serwisy
 import { UserStats, Unit, Topic, ExamTask, Question } from './types';
 import { calculateNextReview, isReviewDue } from './services/srsService';
@@ -42,14 +46,16 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('biomistrz_stats');
     return saved ? JSON.parse(saved) : INITIAL_STATS;
   });
-  
+
+  // --- NOWE STANY DLA INTRO ---
+  const [showIntro, setShowIntro] = useState<boolean>(false);
+  const [introChecked, setIntroChecked] = useState<boolean>(false);
+
   // Dane merytoryczne
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [activeTopic, setActiveTopic] = useState<Topic | null>(null);
   
-  // UWAGA: customTasks zostawiamy w stanie, żeby nie psuć starej logiki Firebase,
-  // ale nie będziemy ich już używać w nowym ExamSection (bo ten ładuje pliki z folderu).
   const [customTasks, setCustomTasks] = useState<ExamTask[]>([]);
 
   // --- STANY FIREBASE I ŁADOWANIA ---
@@ -70,7 +76,6 @@ const App: React.FC = () => {
           if (docSnap.exists()) {
             const data = docSnap.data();
             if (data.stats) setStats(data.stats);
-            // Wczytujemy stare zadania customowe, jeśli jakieś były w bazie
             if (data.customTasks) setCustomTasks(data.customTasks);
           }
         } catch (error) {
@@ -82,21 +87,19 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  
+
   // 2. AUTOMATYCZNY ZAPIS DO CHMURY
   useEffect(() => {
-    // Zapisz lokalnie (zawsze)
     localStorage.setItem('biomistrz_stats', JSON.stringify(stats));
 
-    // Jeśli zalogowany - wyślij do Firebase
     if (user && !authLoading) {
       const saveToCloud = async () => {
         try {
-          // Usuwamy undefined przed wysłaniem do Firebase, żeby uniknąć błędów
           const cleanStats = JSON.parse(JSON.stringify(stats));
           
           await setDoc(doc(db, 'users', user.uid), {
             stats: cleanStats,
-            // customTasks: customTasks, // Opcjonalnie: można przestać to wysyłać, jeśli przechodzisz w 100% na pliki
             lastActive: new Date().toISOString()
           }, { merge: true });
         } catch (error) {
@@ -109,15 +112,30 @@ const App: React.FC = () => {
     }
   }, [user, stats, customTasks, authLoading]);
 
+  // --- NOWOŚĆ: SPRAWDZENIE CZY POKAZAĆ INTRO ---
+  useEffect(() => {
+    // Czekamy aż skończy się ładowanie użytkownika (żeby nie pokazać intra niezalogowanym, jeśli taka jest logika)
+    if (!authLoading) {
+      const hasSeen = localStorage.getItem('hasSeenIntro');
+      
+      if (hasSeen === 'true') {
+        setShowIntro(false);
+      } else {
+        setShowIntro(true);
+      }
+      
+      // NAJWAŻNIEJSZE: Odblokowujemy widok
+      setIntroChecked(true);
+    }
+  }, [authLoading]);
+
   // 3. POBIERANIE DANYCH MERYTORYCZNYCH (JSON)
   useEffect(() => {
     const loadAllData = async () => {
       try {
-        // Ładowanie ikon
         const iconsResponse = await fetch('/Icons.json');
         const iconsData: any = await iconsResponse.json();
 
-        // Ładowanie pytań
         const questionsResponse = await fetch('/questions.json');
         if (!questionsResponse.ok) throw new Error('Błąd pliku questions.json');
         const questionsData = await questionsResponse.json();
@@ -128,7 +146,6 @@ const App: React.FC = () => {
         questionsData.forEach((section: any) => {
           const { sectionName, questions } = section;
 
-          // Mapowanie pytań na typ Question
           const sanitizeQuestions = (qs: any[]): Question[] => qs.map(q => ({
             id: q.id || Math.random().toString(36).substr(2, 9),
             type: q.options ? 'multiple_choice' : 'true_false',
@@ -196,7 +213,6 @@ const App: React.FC = () => {
           }
         });
 
-        // Wczytywanie postępów z localStorage
         const savedProgress = localStorage.getItem('biomistrz_progress');
         if (savedProgress) {
           const progressMap = JSON.parse(savedProgress);
@@ -217,7 +233,6 @@ const App: React.FC = () => {
     loadAllData();
   }, []);
 
-  // Zapis postępów (Unit/Topics) do localStorage
   useEffect(() => {
     if (units.length > 0) {
       const progressToSave: Record<string, any> = {};
@@ -231,16 +246,15 @@ const App: React.FC = () => {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
 
-  // Obliczanie powtórek
   const dueReviews = useMemo(() => {
     return units
       .reduce((acc, unit) => [...acc, ...unit.topics], [] as Topic[])
       .filter(t => isReviewDue(t.nextReviewDate));
   }, [units]);
 
-  // --- RENDEROWANIE WIDOKÓW ---
+  // --- RENDEROWANIE WIDOKÓW (WAŻNE: KOLEJNOŚĆ MA ZNACZENIE) ---
 
-  // 1. Ekran ładowania
+  // 1. Ekran ładowania (Globalny)
   if (dataLoading || authLoading) {
     return (
       <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[100]">
@@ -254,16 +268,32 @@ const App: React.FC = () => {
     );
   }
 
-  // 2. Ekran Logowania
+  // 2. Ekran Logowania (jeśli brak usera)
   if (!user) {
     return <AuthScreen />;
   }
 
-  // 3. Główna Aplikacja
+  // 3. Ekran INTRO (tylko po zalogowaniu i jeśli jeszcze nie widział)
+  // Czekamy też aż introChecked będzie true (żeby nie mignęło menu przed intrem)
+  if (!introChecked) {
+     return null; // Lub loader, ale tu trwa to milisekundy
+  }
+
+  if (showIntro) {
+    return (
+      <IntroScreen 
+        onFinish={() => setShowIntro(false)} 
+      />
+    );
+  }
+
+  // 4. Główna Aplikacja
   return (
     <div className="flex flex-col md:flex-row min-h-screen">
       <motion.div className="fixed top-0 left-0 right-0 h-1.5 bg-blue-500 z-[70] origin-left" style={{ scaleX }} />
-      
+
+      <BugReportButton />
+
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} reviewCount={dueReviews.length} />
       
       <main className="flex-1 flex flex-col md:max-w-4xl md:mx-auto w-full pb-24 md:pb-0 relative">
@@ -313,10 +343,10 @@ const App: React.FC = () => {
                               <p className="text-gray-400 font-bold text-sm mb-4">{unit.description}</p>
                               <div className="w-full bg-gray-100 h-3.5 rounded-full overflow-hidden border border-gray-50">
                                  <motion.div 
-                                    initial={{ width: 0 }}
-                                    whileInView={{ width: `${progress}%` }}
-                                    transition={{ duration: 1 }}
-                                    className="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
+                                   initial={{ width: 0 }}
+                                   whileInView={{ width: `${progress}%` }}
+                                   transition={{ duration: 1 }}
+                                   className="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" 
                                  />
                               </div>
                             </div>
@@ -393,38 +423,67 @@ const App: React.FC = () => {
                </div>
             )}
 
-            {/* --- SEKCJA EGZAMINÓW (ZMODYFIKOWANA NA PLIKI JSON) --- */}
             {/* --- SEKCJA EGZAMINÓW --- */}
             {activeTab === 'exams' && (
               <ExamSection 
                 onExamFinish={(xpEarned) => {
-                  // Aktualizacja statystyk
                   setStats(prev => ({
                     ...prev,
                     xp: prev.xp + xpEarned,
-                    gems: prev.gems + 5, // Bonusowe diamenty za ukończenie
-                    // Możesz też zwiększyć licznik zadań
+                    gems: prev.gems + 5,
                     totalQuestionsAnswered: prev.totalQuestionsAnswered + 1 
                   }));
-                  
-                  // Opcjonalnie: Zapisz od razu do Firebase (jeśli user zalogowany)
-                  // saveToCloud(); <- to zadziała automatycznie dzięki useEffect w App.tsx
                 }}
               />
             )}
 
-            {/* --- SEKCJA KREATORA (ZMODYFIKOWANA NA ZAPIS PLIKÓW) --- */}
+            {/* --- SEKCJA KREATORA --- */}
             {activeTab === 'creator' && (
                <CreatorSection onPublish={(t) => {
-                 // Tutaj plik już został pobrany na dysk.
-                 // Możemy opcjonalnie zaktualizować statystyki, ale nie dodajemy do customTasks,
-                 // żeby nie zapychać Firebase i nie mieszać lokalnych plików z chmurą.
                  console.log("Wygenerowano plik JSON:", t.title);
                }} />
             )}
+            
+            {/* --- SEKCJA ANKIETY --- */}
+            {activeTab === 'survey' && (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+              >
+                <FeedbackSection />
+              </motion.div>
+            )}
 
             {activeTab === 'leaderboard' && <LeaderboardSection />}  
-            {activeTab === 'profile' && <ProfileSection stats={stats} onUpdate={(u) => setStats({...stats, ...u})} onResetAll={() => {}} />}
+            {activeTab === 'profile' && (
+              <ProfileSection 
+                stats={stats} 
+                onUpdate={(u) => setStats(prev => ({...prev, ...u}))} 
+                
+                /* 1. Logika resetowania całej nauki (naprawiłem pustą funkcję) */
+                onResetAll={() => {
+                  setStats(INITIAL_STATS);
+                  // Resetujemy też postęp w unitach
+                  setUnits(prev => prev.map(u => ({
+                    ...u, 
+                    topics: u.topics.map(t => ({ ...t, progress: 0, srsLevel: 0, nextReviewDate: undefined }))
+                  })));
+                  localStorage.removeItem('biomistrz_progress');
+                  localStorage.removeItem('biomistrz_stats');
+                  alert("Postępy zostały wyzerowane.");
+                }}
+
+                /* 2. NOWY PROP: Logika po usunięciu konta */
+                onLogout={() => {
+                  // Ustawienie user na null spowoduje, że App.tsx
+                  // automatycznie przerenderuje się i pokaże <AuthScreen />
+                  // (patrz warunek: if (!user) return <AuthScreen /> w linii 207)
+                  setUser(null);
+                  setStats(INITIAL_STATS);
+                }} 
+              />
+            )}
           </AnimatePresence>
         </div>
       </main>

@@ -21,15 +21,16 @@ const AVAILABLE_EXAMS = [
     desc: 'Kompletny arkusz maturalny. Biochemia, Metabolizm i Genetyka.',
     color: 'bg-purple-600'
   },
-  { 
-    id: 'demo1',
-    title: 'Testowy Arkusz (Demo)', 
-    file: 'moje_zadanie.json', 
-    level: 'Podstawowy',
-    time: '45 min',
-    desc: 'Przykładowy arkusz do testowania aplikacji.',
-    color: 'bg-emerald-600'
+    { 
+    id: 'matura2025staraformuła',
+    title: 'Matura 2025 formuła 2015', 
+    file: 'matura_2025___formu_a_2015__FULL.json', // <--- TWÓJ PLIK
+    level: 'Rozszerzony',
+    time: '180 min',
+    desc: 'Kompletny arkusz maturalny. ',
+    color: 'bg-purple-600'
   },
+
 ];
 
 const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {

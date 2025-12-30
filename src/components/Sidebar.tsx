@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { Home, BookOpen, Trophy, User, FileText, Settings, PenTool } from 'lucide-react';
+import { Home, BookOpen, Trophy, User, FileText, Settings, PenTool, MessageSquare, Coffee } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -13,10 +12,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, reviewCount 
     { id: 'learn', label: 'Nauka', icon: Home },
     { id: 'practice', label: 'Trening', icon: BookOpen, badge: reviewCount },
     { id: 'exams', label: 'Arkusze', icon: FileText },
-    { id: 'creator', label: 'Creator', icon: PenTool },
+    { id: 'creator', label: 'Kreator', icon: PenTool },
     { id: 'leaderboard', label: 'Ranking', icon: Trophy },
+    { id: 'survey', label: 'Ankieta', icon: MessageSquare },
     { id: 'profile', label: 'Profil', icon: User },
   ];
+
+  const handleBuyCoffee = () => {
+    // Pamiętaj, aby podmienić ten link na swój własny!
+    window.open('https://buycoffee.to/biomistrz', '_blank');
+  };
 
   return (
     <aside className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:relative md:w-64 md:h-screen md:border-t-0 md:border-r md:flex md:flex-col p-4">
@@ -26,6 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, reviewCount 
       </div>
       
       <nav className="flex justify-around md:flex-col md:gap-2">
+        {/* Generowanie standardowych przycisków */}
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -49,6 +55,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, reviewCount 
             </button>
           );
         })}
+
+        {/* Przycisk WESPRZYJ MNIE - stylowo identyczny jak nieaktywne przyciski wyżej */}
+        <button
+          onClick={handleBuyCoffee}
+          className="relative flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 group hover:bg-gray-100 text-gray-500"
+        >
+          <Coffee className="w-6 h-6 group-hover:text-gray-700" />
+          <span className="hidden md:inline font-black uppercase text-xs tracking-wider">Wesprzyj mnie</span>
+        </button>
+
       </nav>
       
       <div className="hidden md:mt-auto md:block">

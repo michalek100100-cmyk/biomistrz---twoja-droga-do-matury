@@ -13,9 +13,9 @@ interface QuizSessionProps {
 }
 
 const SOUNDS = {
-  SELECT: 'https://www.soundjay.com/buttons/sounds/button-16.mp3',
-  CORRECT: 'https://www.soundjay.com/buttons/sounds/button-3.mp3',
-  INCORRECT: 'https://www.soundjay.com/buttons/sounds/button-10.mp3',
+  SELECT: '/sounds/select.mp3',
+  CORRECT: '/sounds/correct.mp3',
+  INCORRECT: '/sounds/incorrect.mp3',
 };
 
 const QuizSession: React.FC<QuizSessionProps> = ({ questions, initialIndex = 0, onFinish, onQuit, onXpChange }) => {

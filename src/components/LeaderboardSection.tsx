@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from './firebaseConfig'; // Upewnij się, że ścieżka jest dobra
 import { Trophy, Medal, Crown, User, Flame } from 'lucide-react';
+import { doc, setDoc } from "firebase/firestore";
 
 interface RankingUser {
   id: string;
@@ -19,30 +20,50 @@ const LeaderboardSection = () => {
   useEffect(() => {
     const fetchRanking = async () => {
       try {
-        // Pobierz kolekcję 'users', posortuj malejąco po 'xp', weź top 50
+        // 1. Pobieramy dokumenty BEZ sortowania po XP w zapytaniu
+        // (bo nie możemy sortować jednocześnie po 'xp' i 'stats.xp')
         const q = query(
           collection(db, 'users'),
-          orderBy('xp', 'desc'),
-          limit(50)
+          limit(100) // Pobierzmy setkę, posortujemy u siebie
         );
 
         const querySnapshot = await getDocs(q);
         const fetchedUsers: RankingUser[] = [];
 
         querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          fetchedUsers.push({
-            id: doc.id,
-            name: data.name || 'Anonim',
-            xp: data.xp || 0,
-            streak: data.streak || 0,
-            avatar: data.avatar || '',
-          });
+          const rawData = doc.data();
+          
+          // 🛠️ TUTAJ JEST NAPRAWA:
+          // Sprawdzamy: czy dane są w obiekcie 'stats'? Jeśli tak, użyj ich.
+          // Jeśli nie, użyj danych bezpośrednio z dokumentu (dla testowego gracza).
+          const source = rawData.stats ? rawData.stats : rawData;
+
+          // Zabezpieczenie: jeśli w 'stats' brakuje imienia, szukaj w głównym
+          const name = source.name || rawData.name || rawData.displayName || 'Anonim';
+          const xp = source.xp || rawData.xp || 0;
+          const streak = source.streak || rawData.streak || 0;
+          const avatar = source.avatar || rawData.avatar || '';
+
+          // Dodajemy tylko jeśli ktoś ma więcej niż 0 XP (opcjonalnie)
+          if (xp >= 0) {
+            fetchedUsers.push({
+              id: doc.id,
+              name: name,
+              xp: xp,
+              streak: streak,
+              avatar: avatar,
+            });
+          }
         });
 
-        setUsers(fetchedUsers);
+        // 2. Sortujemy ręcznie w JavaScript (Malejąco po XP)
+        fetchedUsers.sort((a, b) => b.xp - a.xp);
+
+        // 3. Bierzemy top 50
+        setUsers(fetchedUsers.slice(0, 50));
+        
       } catch (error) {
-        console.error("Błąd pobierania rankingu:", error);
+        console.error("Błąd rankingu:", error);
       } finally {
         setLoading(false);
       }
@@ -50,7 +71,6 @@ const LeaderboardSection = () => {
 
     fetchRanking();
   }, []);
-
   // Funkcja pomocnicza do kolorów medali
   const getPlaceColor = (index: number) => {
     switch (index) {
@@ -79,6 +99,7 @@ const LeaderboardSection = () => {
     );
   }
 
+
   return (
     <div className="max-w-md mx-auto p-4 space-y-6 pb-24">
       {/* Nagłówek */}
@@ -92,23 +113,24 @@ const LeaderboardSection = () => {
         </p>
       </div>
 
-      {/* TOP 3 - Podium */}
-      {users.length >= 3 && (
+      {/* TOP 3 - Podium (Wyświetlamy jeśli jest chociaż 1 gracz) */}
+      {users.length > 0 && (
         <div className="flex justify-center items-end gap-4 mb-8">
-          {/* 2. Miejsce */}
-          <div className="flex flex-col items-center gap-2">
+          
+          {/* 2. Miejsce (Lewa strona) */}
+          <div className={`flex flex-col items-center gap-2 ${!users[1] ? 'invisible' : ''}`}>
             <div className="w-16 h-16 rounded-full border-4 border-gray-200 bg-gray-100 overflow-hidden relative">
-               {users[1].avatar ? <img src={users[1].avatar} className="w-full h-full object-cover" /> : <User className="w-full h-full p-3 text-gray-300" />}
+               {users[1]?.avatar ? <img src={users[1].avatar} className="w-full h-full object-cover" /> : <User className="w-full h-full p-3 text-gray-300" />}
             </div>
             <div className="text-center">
-              <p className="font-bold text-xs text-gray-600 truncate w-20">{users[1].name}</p>
-              <p className="font-black text-sm text-purple-600">{users[1].xp} XP</p>
+              <p className="font-bold text-xs text-gray-600 truncate w-20">{users[1]?.name}</p>
+              <p className="font-black text-sm text-purple-600">{users[1]?.xp || 0} XP</p>
             </div>
             <div className="bg-gray-200 w-16 h-24 rounded-t-lg flex items-start justify-center pt-2 font-black text-2xl text-white shadow-inner">2</div>
           </div>
 
-          {/* 1. Miejsce */}
-          <div className="flex flex-col items-center gap-2 -mt-8">
+          {/* 1. Miejsce (Środek - ZAWSZE widoczny) */}
+          <div className="flex flex-col items-center gap-2 -mt-8 z-10">
              <Crown className="w-8 h-8 text-yellow-400 fill-yellow-400 animate-bounce" />
             <div className="w-20 h-20 rounded-full border-4 border-yellow-300 bg-yellow-50 overflow-hidden relative shadow-lg shadow-yellow-200/50">
                {users[0].avatar ? <img src={users[0].avatar} className="w-full h-full object-cover" /> : <User className="w-full h-full p-4 text-yellow-200" />}
@@ -120,21 +142,21 @@ const LeaderboardSection = () => {
             <div className="bg-gradient-to-b from-yellow-300 to-yellow-400 w-20 h-32 rounded-t-lg flex items-start justify-center pt-4 font-black text-4xl text-white shadow-inner">1</div>
           </div>
 
-          {/* 3. Miejsce */}
-          <div className="flex flex-col items-center gap-2">
+          {/* 3. Miejsce (Prawa strona) */}
+          <div className={`flex flex-col items-center gap-2 ${!users[2] ? 'invisible' : ''}`}>
             <div className="w-16 h-16 rounded-full border-4 border-orange-200 bg-orange-50 overflow-hidden relative">
-               {users[2].avatar ? <img src={users[2].avatar} className="w-full h-full object-cover" /> : <User className="w-full h-full p-3 text-orange-200" />}
+               {users[2]?.avatar ? <img src={users[2].avatar} className="w-full h-full object-cover" /> : <User className="w-full h-full p-3 text-orange-200" />}
             </div>
             <div className="text-center">
-              <p className="font-bold text-xs text-gray-600 truncate w-20">{users[2].name}</p>
-              <p className="font-black text-sm text-purple-600">{users[2].xp} XP</p>
+              <p className="font-bold text-xs text-gray-600 truncate w-20">{users[2]?.name}</p>
+              <p className="font-black text-sm text-purple-600">{users[2]?.xp || 0} XP</p>
             </div>
             <div className="bg-orange-300 w-16 h-16 rounded-t-lg flex items-start justify-center pt-2 font-black text-2xl text-white shadow-inner">3</div>
           </div>
         </div>
       )}
 
-      {/* Lista pozostałych (4+) */}
+      {/* Lista pozostałych (Miejsca 4+) */}
       <div className="space-y-3">
         {users.slice(3).map((user, index) => (
           <div 

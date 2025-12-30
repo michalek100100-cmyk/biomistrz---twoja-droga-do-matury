@@ -1,19 +1,26 @@
-
 import React, { useState, useRef } from 'react';
-import { Camera, Save, User as UserIcon, AlignLeft, Info, RefreshCw, Trash2 } from 'lucide-react';
+// 1. Dodałem ikonę Shield do importów
+import { Camera, Save, User as UserIcon, AlignLeft, Info, RefreshCw, Trash2, LogOut, Shield } from 'lucide-react';
 import { UserStats } from '../types';
+import { getAuth, deleteUser, signOut } from 'firebase/auth';
+
+// 2. Stała z Twoim linkiem (łatwo edytować w przyszłości)
+const POLICY_URL = "https://docs.google.com/document/d/e/2PACX-1vRlTtVsfqBj7YFibRZXc4QYcZyNu8G1N2Y0GARW2S1fbHXFQaavHqQHQl45NoW7OEahqiJb-0S_S5Eq/pub";
 
 interface ProfileSectionProps {
   stats: UserStats;
   onUpdate: (updates: Partial<UserStats>) => void;
   onResetAll: () => void;
+  onLogout: () => void;
 }
 
-const ProfileSection: React.FC<ProfileSectionProps> = ({ stats, onUpdate, onResetAll }) => {
+const ProfileSection: React.FC<ProfileSectionProps> = ({ stats, onUpdate, onResetAll, onLogout }) => {
   const [name, setName] = useState(stats.name);
   const [bio, setBio] = useState(stats.bio);
   const [avatar, setAvatar] = useState(stats.avatar);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const auth = getAuth();
 
   const handleSave = () => {
     onUpdate({ name, bio, avatar });
@@ -31,14 +38,57 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ stats, onUpdate, onRese
     }
   };
 
+  const handleLogoutPress = async () => {
+    try {
+        await signOut(auth);
+        onLogout(); 
+    } catch (error) {
+        console.error("Błąd wylogowania:", error);
+    }
+  };
+
+  // 3. Funkcja otwierająca link
+  const handleOpenPolicy = () => {
+    window.open(POLICY_URL, '_blank');
+  };
+
+  const handleDeleteAccount = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const confirm1 = window.confirm("CZY NA PEWNO chcesz usunąć konto?");
+    if (!confirm1) return;
+
+    const confirm2 = window.confirm("Ta operacja jest NIEODWRACALNA. Stracisz dostęp do aplikacji i wszystkie dane z chmury. Kontynuować?");
+    if (!confirm2) return;
+
+    try {
+      await deleteUser(user);
+      alert("Twoje konto zostało trwale usunięte.");
+      onLogout();
+      
+    } catch (error: any) {
+      console.error("Błąd usuwania konta:", error);
+
+      if (error.code === 'auth/requires-recent-login') {
+        alert("Ze względów bezpieczeństwa musisz zalogować się ponownie, aby potwierdzić usunięcie konta. Zostaniesz teraz wylogowany.");
+        await signOut(auth);
+        onLogout(); 
+      } else {
+        alert("Wystąpił błąd: " + error.message);
+      }
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 animate-in fade-in duration-500 pb-32">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-black text-gray-800 tracking-tight">Twój Profil</h2>
-        <p className="text-gray-500 font-bold">Personalizacja Twojego konta BioHelp</p>
+        <p className="text-gray-500 font-bold">Personalizacja Twojego konta BioMistrz</p>
       </div>
 
       <div className="bg-white rounded-3xl border-2 border-gray-200 p-8 shadow-sm space-y-8">
+        
         {/* Avatar Selection */}
         <div className="flex flex-col items-center gap-4">
           <div className="relative group">
@@ -117,14 +167,36 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ stats, onUpdate, onRese
           <Save className="w-5 h-5" />
           Zapisz zmiany
         </button>
+
+        {/* 4. NOWY PRZYCISK POLITYKI PRYWATNOŚCI */}
+        <button 
+          onClick={handleOpenPolicy}
+          className="w-full py-4 bg-white border-2 border-blue-100 text-blue-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+        >
+          <Shield className="w-4 h-4" />
+          Polityka Prywatności
+        </button>
+
+        {/* PRZYCISK WYLOGUJ */}
+        <button 
+          onClick={handleLogoutPress}
+          className="w-full py-4 bg-white border-2 border-gray-200 text-gray-600 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+        >
+          <LogOut className="w-4 h-4" />
+          Wyloguj się
+        </button>
+
       </div>
 
       {/* Danger Zone */}
-      <div className="mt-8 bg-white rounded-3xl border-2 border-red-100 p-8 shadow-sm space-y-4">
-        <h3 className="text-red-500 font-black uppercase text-xs tracking-widest flex items-center gap-2">
-           <Trash2 className="w-4 h-4" /> Strefa niebezpieczna
-        </h3>
-        <p className="text-gray-500 text-sm font-bold">Możesz wyzerować całą swoją historię nauki. Tej operacji nie da się cofnąć.</p>
+      <div className="mt-8 bg-white rounded-3xl border-2 border-red-100 p-8 shadow-sm space-y-6">
+        <div>
+          <h3 className="text-red-500 font-black uppercase text-xs tracking-widest flex items-center gap-2 mb-2">
+             <Trash2 className="w-4 h-4" /> Strefa niebezpieczna
+          </h3>
+          <p className="text-gray-500 text-sm font-bold">Zarządzaj ryzykownymi operacjami na koncie.</p>
+        </div>
+
         <button 
           onClick={() => {
             if(confirm("CZY NA PEWNO chcesz wyzerować całą swoją naukę? Stracisz XP, streak i postępy lekcji.")) {
@@ -134,17 +206,33 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ stats, onUpdate, onRese
           className="w-full py-4 border-2 border-red-200 text-red-500 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
         >
           <RefreshCw className="w-4 h-4" />
-          Resetuj całą naukę
+          Resetuj postępy nauki
         </button>
-      </div>
 
-      <div className="mt-8 bg-gray-100 rounded-2xl p-6 flex items-start gap-4">
+        <div className="pt-4 border-t border-red-100">
+           <p className="text-red-400 text-[10px] font-bold uppercase mb-3 text-center tracking-wide">
+             Trwałe usunięcie użytkownika
+           </p>
+           <button 
+             onClick={handleDeleteAccount}
+             className="w-full py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-red-700 transition-colors shadow-lg flex items-center justify-center gap-2"
+           >
+             <Trash2 className="w-4 h-4" />
+             Usuń konto trwale
+           </button>
+        </div>
+      </div>
+      
+      {/* Info o prywatności na dole */}
+       <div className="mt-8 bg-gray-100 rounded-2xl p-6 flex items-start gap-4">
         <div className="p-2 bg-gray-200 rounded-lg">
           <Info className="w-5 h-5 text-gray-500" />
         </div>
         <div className="space-y-1">
           <p className="font-bold text-gray-700 text-sm">Prywatność danych</p>
-          <p className="text-gray-500 text-xs font-medium">Twój profil jest zapisywany lokalnie w Twojej przeglądarce. Inni użytkownicy zobaczą Cię w Rankingu, jeśli Twoje XP znajdzie się w pierwszej piątce.</p>
+          <p className="text-gray-500 text-xs font-medium">
+             Twoje dane są bezpieczne. Opcja "Usuń konto" trwale wymazuje Twój adres e-mail i identyfikator z naszej bazy danych (Firebase).
+          </p>
         </div>
       </div>
     </div>
