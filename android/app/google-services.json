@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "587140568626",
+    "project_id": "biomistrz-5d386",
+    "storage_bucket": "biomistrz-5d386.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:587140568626:android:1b4d626e78710147524e2b",
+        "android_client_info": {
+          "package_name": "com.biomistrz.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-sHfLI-H2uRoBZ7cXPqvnXGsHWCD2MZM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
