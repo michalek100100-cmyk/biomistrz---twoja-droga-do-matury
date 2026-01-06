@@ -9,21 +9,26 @@ import ExamSection from './components/ExamSection';
 import CreatorSection from './components/CreatorSection';
 import ProfileSection from './components/ProfileSection';
 import BugReportButton from './components/BugReportButton';
-import FeedbackSection from './components/FeedbackSection'; // <--- Upewnij się, że masz ten plik
+import FeedbackSection from './components/FeedbackSection';
 import IntroScreen from './screens/IntroScreen';
+import AuthScreen from './screens/AuthScreen';
+import LeaderboardSection from './components/LeaderboardSection';
 
 // Typy i serwisy
 import { UserStats, Unit, Topic, ExamTask, Question } from './types';
 import { calculateNextReview, isReviewDue } from './services/srsService';
 // Ikony
-import { ChevronLeft, RefreshCw, Play, Sparkles } from 'lucide-react';
+import { 
+  ChevronLeft, RefreshCw, Play, Sparkles, 
+  Moon, Sun, Bell, Volume2, Shield, LogOut, Info 
+} from 'lucide-react';
+
 // Firebase
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from "./components/firebaseConfig";
-import AuthScreen from './screens/AuthScreen';
-import LeaderboardSection from './components/LeaderboardSection';
 
+// --- KONFIGURACJA UI ---
 const INITIAL_STATS: UserStats = {
   name: 'BioMistrz',
   avatar: '',
@@ -37,94 +42,262 @@ const INITIAL_STATS: UserStats = {
 
 const COLORS = ['blue', 'emerald', 'purple', 'rose', 'orange', 'indigo', 'cyan', 'amber', 'lime', 'violet'];
 
+// --- KOMPONENT USTAWIEŃ (WEWNĘTRZNY) ---
+interface SettingsProps {
+  settings: { darkMode: boolean; sound: boolean; notifications: boolean };
+  onToggle: (key: string) => void;
+  onLogout: () => void;
+}
+
+const SettingsView: React.FC<SettingsProps> = ({ settings, onToggle, onLogout }) => {
+  
+  const ToggleItem = ({ label, icon: Icon, active, onClick, description }: any) => (
+    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-2xl mb-3 border border-gray-100 dark:border-gray-700">
+      <div className="flex items-center gap-4">
+        <div className={`p-3 rounded-xl ${active ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-200 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
+          <Icon className="w-6 h-6" />
+        </div>
+        <div>
+          <h4 className="font-bold text-gray-800 dark:text-white">{label}</h4>
+          {description && <p className="text-xs text-gray-500 dark:text-gray-400">{description}</p>}
+        </div>
+      </div>
+      <button 
+        onClick={onClick}
+        className={`w-14 h-8 rounded-full flex items-center p-1 transition-all duration-300 ${active ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+      >
+        <div className={`w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300 ${active ? 'translate-x-6' : 'translate-x-0'}`} />
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="max-w-2xl mx-auto py-8 px-4 animate-fade-in">
+      <h2 className="text-3xl font-black text-gray-800 dark:text-white mb-8 flex items-center gap-3">
+        <Shield className="w-8 h-8 text-blue-600" /> Ustawienia
+      </h2>
+
+      <div className="space-y-8">
+        <section>
+          <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 ml-2">Wygląd i Dźwięk</h3>
+          <div className="bg-white dark:bg-gray-800 p-2 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-700">
+            <ToggleItem 
+              label="Tryb Ciemny" 
+              icon={settings.darkMode ? Moon : Sun} 
+              active={settings.darkMode} 
+              onClick={() => onToggle('darkMode')}
+              description="Oszczędzaj oczy podczas nocnej nauki"
+            />
+            <ToggleItem 
+              label="Efekty Dźwiękowe" 
+              icon={Volume2} 
+              active={settings.sound} 
+              onClick={() => onToggle('sound')}
+              description="Dźwięki przy poprawnych odpowiedziach"
+            />
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 ml-2">Powiadomienia</h3>
+          <div className="bg-white dark:bg-gray-800 p-2 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-700">
+            <ToggleItem 
+              label="Przypomnienia o nauce" 
+              icon={Bell} 
+              active={settings.notifications} 
+              onClick={() => onToggle('notifications')}
+              description="Powiadom mnie, gdy nadejdzie czas powtórki"
+            />
+          </div>
+        </section>
+
+        <section>
+          <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 ml-2">Konto i Aplikacja</h3>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-[2rem] shadow-sm border border-gray-100 dark:border-gray-700 space-y-4">
+             <div className="flex items-center gap-4 text-gray-600 dark:text-gray-300 mb-4">
+                <Info className="w-5 h-5" />
+                <span className="text-sm">Wersja aplikacji: 1.2.0 (Beta)</span>
+             </div>
+             <button 
+                onClick={onLogout}
+                className="w-full py-4 rounded-xl bg-red-50 text-red-600 font-bold flex items-center justify-center gap-2 hover:bg-red-100 transition-colors border border-red-100 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400"
+             >
+                <LogOut className="w-5 h-5" /> Wyloguj się
+             </button>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+};
+
+
+// --- GŁÓWNY KOMPONENT APP ---
+
 const App: React.FC = () => {
   // --- STANY APLIKACJI ---
   const [activeTab, setActiveTab] = useState('learn');
   
+  // NOWE: Klucz do wymuszania odświeżenia widoku
+  const [contentRefreshKey, setContentRefreshKey] = useState(0);
+
   // Stan użytkownika (lokalny + fallback)
   const [stats, setStats] = useState<UserStats>(() => {
     const saved = localStorage.getItem('biomistrz_stats');
     return saved ? JSON.parse(saved) : INITIAL_STATS;
   });
 
-  // --- NOWE STANY DLA INTRO ---
+  // Stan ustawień
+  const [settings, setSettings] = useState(() => {
+    const saved = localStorage.getItem('biomistrz_settings');
+    return saved ? JSON.parse(saved) : { darkMode: false, sound: true, notifications: true };
+  });
+
+  // --- EFEKT: TRYB CIEMNY ---
+  useEffect(() => {
+    if (settings.darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('biomistrz_settings', JSON.stringify(settings));
+  }, [settings]);
+
+  // --- NOWE: WATCHDOG ODŚWIEŻANIA SEKCJI ---
+  // Ta funkcja naprawia "puste tło" poprzez wymuszenie przerysowania kontenera 0.1s po zmianie zakładki
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setContentRefreshKey(prev => prev + 1);
+    }, 100); // Czekamy 0.1 sekundy
+
+    return () => clearTimeout(timer);
+  }, [activeTab]);
+
+  // --- STANY FIREBASE I LOGIKI ---
   const [showIntro, setShowIntro] = useState<boolean>(false);
   const [introChecked, setIntroChecked] = useState<boolean>(false);
 
-  // Dane merytoryczne
   const [units, setUnits] = useState<Unit[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [activeTopic, setActiveTopic] = useState<Topic | null>(null);
   
+  const [quizProgress, setQuizProgress] = useState<Record<string, { index: number; score: number; wrongIndices: number[] }>>(() => {
+    const saved = localStorage.getItem('biomistrz_quiz_progress');
+    return saved ? JSON.parse(saved) : {};
+  });
+  
   const [customTasks, setCustomTasks] = useState<ExamTask[]>([]);
-
-  // --- STANY FIREBASE I ŁADOWANIA ---
   const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true); // Ładowanie użytkownika
-  const [dataLoading, setDataLoading] = useState(true); // Ładowanie pytań z JSON
+  const [authLoading, setAuthLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
 
-  // 1. POBIERANIE DANYCH UŻYTKOWNIKA (FIREBASE)
+// 1. POBIERANIE DANYCH UŻYTKOWNIKA (FIREBASE)
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       
       if (currentUser) {
+        setAuthLoading(true); // Upewniamy się, że ekran ładowania jest aktywny
         try {
           const docRef = doc(db, 'users', currentUser.uid);
           const docSnap = await getDoc(docRef);
           
           if (docSnap.exists()) {
             const data = docSnap.data();
-            if (data.stats) setStats(data.stats);
+            
+            // --- NAPRAWA ZNIKAJĄCYCH DANYCH ---
+            // 1. Scalamy domyślne statystyki z tymi z bazy (żeby nic nie było undefined)
+            let currentStats = {
+              ...INITIAL_STATS,
+              ...data.stats
+            };
+
+            // 2. Jeśli w bazie brakuje avatara, a użytkownik ma go w Google -> użyj Google
+            if (!currentStats.avatar && currentUser.photoURL) {
+               currentStats.avatar = currentUser.photoURL;
+            }
+            // 3. Jeśli imię to domyślny "BioMistrz" lub puste, a w Google jest imię -> użyj Google
+            if ((!currentStats.name || currentStats.name === 'BioMistrz') && currentUser.displayName) {
+               currentStats.name = currentUser.displayName;
+            }
+            // ----------------------------------
+
+            const lastActiveDate = data.lastActive;
+
+            // Logika Streaka
+            if (lastActiveDate) {
+              const lastDate = new Date(lastActiveDate);
+              const today = new Date();
+              lastDate.setHours(0, 0, 0, 0);
+              today.setHours(0, 0, 0, 0);
+
+              const diffTime = today.getTime() - lastDate.getTime();
+              const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+              if (diffDays === 1) {
+                currentStats.streak = (currentStats.streak || 0) + 1;
+              } else if (diffDays > 1) {
+                currentStats.streak = 1;
+              }
+            } else {
+              currentStats.streak = 1;
+            }
+
+            setStats(currentStats);
             if (data.customTasks) setCustomTasks(data.customTasks);
+            if (data.quizProgress) setQuizProgress(data.quizProgress);
+          
+          } else {
+            // --- NOWY UŻYTKOWNIK (PIERWSZE LOGOWANIE) ---
+            // Tworzymy statystyki od razu z danymi z Google
+            const newStats = {
+              ...INITIAL_STATS,
+              name: currentUser.displayName || 'BioMistrz',
+              avatar: currentUser.photoURL || '',
+            };
+            setStats(newStats);
           }
         } catch (error) {
           console.error("Błąd pobierania z Firebase:", error);
         }
       }
-      setAuthLoading(false); // Auth sprawdzony
+      setAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  
-
   // 2. AUTOMATYCZNY ZAPIS DO CHMURY
   useEffect(() => {
     localStorage.setItem('biomistrz_stats', JSON.stringify(stats));
+    localStorage.setItem('biomistrz_quiz_progress', JSON.stringify(quizProgress));
 
     if (user && !authLoading) {
       const saveToCloud = async () => {
         try {
           const cleanStats = JSON.parse(JSON.stringify(stats));
+          const cleanQuizProgress = JSON.parse(JSON.stringify(quizProgress));
           
           await setDoc(doc(db, 'users', user.uid), {
             stats: cleanStats,
+            quizProgress: cleanQuizProgress, 
+            settings: settings, 
             lastActive: new Date().toISOString()
           }, { merge: true });
-        } catch (error) {
-          console.error("Błąd zapisu:", error);
+        } catch (error: any) {
+          console.error("❌ Błąd zapisu:", error);
         }
       };
       
-      const timeoutId = setTimeout(saveToCloud, 2000);
+      const timeoutId = setTimeout(saveToCloud, 800);
       return () => clearTimeout(timeoutId);
     }
-  }, [user, stats, customTasks, authLoading]);
+  }, [user, stats, customTasks, authLoading, quizProgress, settings]); 
 
-  // --- NOWOŚĆ: SPRAWDZENIE CZY POKAZAĆ INTRO ---
+  // --- SPRAWDZENIE CZY POKAZAĆ INTRO ---
   useEffect(() => {
-    // Czekamy aż skończy się ładowanie użytkownika (żeby nie pokazać intra niezalogowanym, jeśli taka jest logika)
     if (!authLoading) {
       const hasSeen = localStorage.getItem('hasSeenIntro');
-      
-      if (hasSeen === 'true') {
-        setShowIntro(false);
-      } else {
-        setShowIntro(true);
-      }
-      
-      // NAJWAŻNIEJSZE: Odblokowujemy widok
+      setShowIntro(hasSeen !== 'true');
       setIntroChecked(true);
     }
   }, [authLoading]);
@@ -189,8 +362,8 @@ const App: React.FC = () => {
             });
             colorIndex++;
           } else {
-            const topicsMap = groupByTopic(questions);
-            Object.keys(topicsMap).forEach((topicTitle) => {
+             const topicsMap = groupByTopic(questions);
+             Object.keys(topicsMap).forEach((topicTitle) => {
               processedUnits.push({
                 id: `unit_loose_${topicTitle}`,
                 title: topicTitle,
@@ -234,6 +407,15 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (selectedUnit) {
+      const updatedUnit = units.find(u => u.id === selectedUnit.id);
+      if (updatedUnit && JSON.stringify(updatedUnit) !== JSON.stringify(selectedUnit)) {
+         setSelectedUnit(updatedUnit);
+      }
+    }
+  }, [units, selectedUnit]);
+
+  useEffect(() => {
     if (units.length > 0) {
       const progressToSave: Record<string, any> = {};
       units.forEach(u => u.topics.forEach(t => {
@@ -252,44 +434,45 @@ const App: React.FC = () => {
       .filter(t => isReviewDue(t.nextReviewDate));
   }, [units]);
 
-  // --- RENDEROWANIE WIDOKÓW (WAŻNE: KOLEJNOŚĆ MA ZNACZENIE) ---
+  const handleLogout = () => {
+     setUser(null);
+     setStats(INITIAL_STATS);
+     auth.signOut();
+  };
 
-  // 1. Ekran ładowania (Globalny)
+  const handleToggleSettings = (key: string) => {
+    setSettings((prev: any) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // --- RENDEROWANIE ---
+
   if (dataLoading || authLoading) {
     return (
-      <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[100]">
+      <div className="fixed inset-0 bg-white dark:bg-gray-900 flex flex-col items-center justify-center z-[100]">
         <motion.div 
           animate={{ rotate: 360, scale: [1, 1.1, 1] }} 
           transition={{ repeat: Infinity, duration: 1.5 }} 
           className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full mb-4 shadow-lg" 
         />
-        <h1 className="text-2xl font-black text-blue-600 tracking-tighter">Wczytywanie BioMistrza...</h1>
+        <h1 className="text-2xl font-black text-blue-600 dark:text-blue-400 tracking-tighter">Wczytywanie BioMistrza...</h1>
       </div>
     );
   }
 
-  // 2. Ekran Logowania (jeśli brak usera)
-  if (!user) {
-    return <AuthScreen />;
-  }
-
-  // 3. Ekran INTRO (tylko po zalogowaniu i jeśli jeszcze nie widział)
-  // Czekamy też aż introChecked będzie true (żeby nie mignęło menu przed intrem)
-  if (!introChecked) {
-     return null; // Lub loader, ale tu trwa to milisekundy
-  }
-
+  if (!user) return <AuthScreen />;
+  if (!introChecked) return null;
   if (showIntro) {
-    return (
-      <IntroScreen 
-        onFinish={() => setShowIntro(false)} 
-      />
-    );
-  }
-
-  // 4. Główna Aplikacja
   return (
-    <div className="flex flex-col md:flex-row min-h-screen">
+    <IntroScreen 
+      onFinish={() => setShowIntro(false)} 
+      userName={stats.name || user.displayName || 'BioMistrzu'} 
+    />
+  );
+}
+
+  return (
+    <div className={`flex flex-col md:flex-row min-h-screen transition-colors duration-300 ${settings.darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
+      
       <motion.div className="fixed top-0 left-0 right-0 h-1.5 bg-blue-500 z-[70] origin-left" style={{ scaleX }} />
 
       <BugReportButton />
@@ -297,12 +480,16 @@ const App: React.FC = () => {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} reviewCount={dueReviews.length} />
       
       <main className="flex-1 flex flex-col md:max-w-4xl md:mx-auto w-full pb-24 md:pb-0 relative">
-        <TopBar stats={stats} />
+        <TopBar 
+          stats={stats} 
+          onNavigate={setActiveTab} 
+          reviewCount={dueReviews.length} 
+        />
         
-        <div className="p-4 md:p-8 flex-1">
+        {/* ZMIANA: Dodano key={contentRefreshKey}, który wymusza przerysowanie komponentu po zmianie zakładki */}
+        <div key={contentRefreshKey} className="p-4 md:p-8 flex-1">
           <AnimatePresence mode="wait">
             
-            {/* --- SEKCJA NAUKI --- */}
             {activeTab === 'learn' && (
               <motion.div key="learn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-10">
                 {!selectedUnit ? (
@@ -333,15 +520,15 @@ const App: React.FC = () => {
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.05 }}
                             onClick={() => setSelectedUnit(unit)}
-                            className="bg-white rounded-[2.5rem] p-8 border-2 border-gray-100 hover:border-blue-500 cursor-pointer shadow-sm hover:shadow-xl transition-all flex flex-col md:flex-row items-center gap-8 duo-button-shadow group"
+                            className="bg-white dark:bg-gray-800 rounded-[2.5rem] p-8 border-2 border-gray-100 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 cursor-pointer shadow-sm hover:shadow-xl transition-all flex flex-col md:flex-row items-center gap-8 duo-button-shadow group"
                           >
-                            <div className="text-7xl p-6 bg-gray-50 rounded-[2rem] group-hover:scale-105 transition-transform">
+                            <div className="text-7xl p-6 bg-gray-50 dark:bg-gray-700 rounded-[2rem] group-hover:scale-105 transition-transform">
                               {unit.icon}
                             </div>
                             <div className="flex-1 text-center md:text-left">
-                              <h3 className="text-2xl font-black text-gray-800 mb-1">{unit.title}</h3>
-                              <p className="text-gray-400 font-bold text-sm mb-4">{unit.description}</p>
-                              <div className="w-full bg-gray-100 h-3.5 rounded-full overflow-hidden border border-gray-50">
+                              <h3 className="text-2xl font-black text-gray-800 dark:text-white mb-1">{unit.title}</h3>
+                              <p className="text-gray-400 dark:text-gray-400 font-bold text-sm mb-4">{unit.description}</p>
+                              <div className="w-full bg-gray-100 dark:bg-gray-700 h-3.5 rounded-full overflow-hidden border border-gray-50 dark:border-gray-600">
                                  <motion.div 
                                    initial={{ width: 0 }}
                                    whileInView={{ width: `${progress}%` }}
@@ -350,9 +537,9 @@ const App: React.FC = () => {
                                  />
                               </div>
                             </div>
-                            <div className="bg-blue-50 px-6 py-3 rounded-2xl border-2 border-blue-100 text-center min-w-[100px]">
-                               <span className="text-xl font-black text-blue-600 block">{completed}/{total}</span>
-                               <span className="text-[9px] font-black uppercase text-blue-300 tracking-widest whitespace-nowrap">Tematy</span>
+                            <div className="bg-blue-50 dark:bg-blue-900/30 px-6 py-3 rounded-2xl border-2 border-blue-100 dark:border-blue-800/50 text-center min-w-[100px]">
+                               <span className="text-xl font-black text-blue-600 dark:text-blue-400 block">{completed}/{total}</span>
+                               <span className="text-[9px] font-black uppercase text-blue-300 dark:text-blue-500 tracking-widest whitespace-nowrap">Tematy</span>
                             </div>
                           </motion.div>
                         );
@@ -363,7 +550,7 @@ const App: React.FC = () => {
                   <div className="space-y-8">
                     <button 
                       onClick={() => setSelectedUnit(null)}
-                      className="flex items-center gap-2 text-blue-600 font-black uppercase text-[10px] hover:translate-x-[-2px] transition-transform bg-white px-5 py-2.5 rounded-full shadow-sm"
+                      className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-black uppercase text-[10px] hover:translate-x-[-2px] transition-transform bg-white dark:bg-gray-800 px-5 py-2.5 rounded-full shadow-sm"
                     >
                       <ChevronLeft className="w-4 h-4" /> Wróć do Mapy
                     </button>
@@ -391,17 +578,16 @@ const App: React.FC = () => {
               </motion.div>
             )}
 
-            {/* --- SEKCJA POWTÓREK --- */}
             {activeTab === 'practice' && (
                <div className="max-w-2xl mx-auto py-8">
-                 <h2 className="text-3xl font-black text-gray-800 mb-8 flex items-center gap-3">
+                 <h2 className="text-3xl font-black text-gray-800 dark:text-white mb-8 flex items-center gap-3">
                    <RefreshCw className="w-8 h-8 text-orange-500" /> Centrum Powtórek
                  </h2>
                  {dueReviews.length === 0 ? (
-                   <div className="bg-white rounded-[3rem] p-20 text-center border-4 border-dashed border-gray-100">
+                   <div className="bg-white dark:bg-gray-800 rounded-[3rem] p-20 text-center border-4 border-dashed border-gray-100 dark:border-gray-700">
                      <div className="text-7xl mb-6">🏆</div>
-                     <h3 className="text-xl font-black text-gray-700">Wszystko utrwalone!</h3>
-                     <p className="text-gray-400 mt-2">Wróć jutro, aby sprawdzić nową dawkę powtórek.</p>
+                     <h3 className="text-xl font-black text-gray-700 dark:text-gray-200">Wszystko utrwalone!</h3>
+                     <p className="text-gray-400 dark:text-gray-500 mt-2">Wróć jutro, aby sprawdzić nową dawkę powtórek.</p>
                    </div>
                  ) : (
                    <div className="space-y-4">
@@ -409,11 +595,11 @@ const App: React.FC = () => {
                         <button 
                           key={topic.id} 
                           onClick={() => setActiveTopic(topic)}
-                          className="w-full bg-white p-8 rounded-[2.5rem] border-2 border-gray-50 flex justify-between items-center hover:border-orange-400 transition-all duo-button-shadow"
+                          className="w-full bg-white dark:bg-gray-800 p-8 rounded-[2.5rem] border-2 border-gray-50 dark:border-gray-700 flex justify-between items-center hover:border-orange-400 transition-all duo-button-shadow"
                         >
                           <div className="flex items-center gap-6">
                             <span className="text-5xl">{topic.icon}</span>
-                            <h4 className="text-xl font-black text-gray-800">{topic.title}</h4>
+                            <h4 className="text-xl font-black text-gray-800 dark:text-gray-100">{topic.title}</h4>
                           </div>
                           <Play className="w-10 h-10 text-orange-500" />
                         </button>
@@ -423,7 +609,6 @@ const App: React.FC = () => {
                </div>
             )}
 
-            {/* --- SEKCJA EGZAMINÓW --- */}
             {activeTab === 'exams' && (
               <ExamSection 
                 onExamFinish={(xpEarned) => {
@@ -437,34 +622,24 @@ const App: React.FC = () => {
               />
             )}
 
-            {/* --- SEKCJA KREATORA --- */}
             {activeTab === 'creator' && (
-               <CreatorSection onPublish={(t) => {
-                 console.log("Wygenerowano plik JSON:", t.title);
-               }} />
+               <CreatorSection onPublish={(t) => console.log("Wygenerowano:", t.title)} />
             )}
             
-            {/* --- SEKCJA ANKIETY --- */}
             {activeTab === 'survey' && (
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }}
-              >
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <FeedbackSection />
               </motion.div>
             )}
 
             {activeTab === 'leaderboard' && <LeaderboardSection />}  
+            
             {activeTab === 'profile' && (
               <ProfileSection 
                 stats={stats} 
                 onUpdate={(u) => setStats(prev => ({...prev, ...u}))} 
-                
-                /* 1. Logika resetowania całej nauki (naprawiłem pustą funkcję) */
                 onResetAll={() => {
                   setStats(INITIAL_STATS);
-                  // Resetujemy też postęp w unitach
                   setUnits(prev => prev.map(u => ({
                     ...u, 
                     topics: u.topics.map(t => ({ ...t, progress: 0, srsLevel: 0, nextReviewDate: undefined }))
@@ -473,17 +648,20 @@ const App: React.FC = () => {
                   localStorage.removeItem('biomistrz_stats');
                   alert("Postępy zostały wyzerowane.");
                 }}
-
-                /* 2. NOWY PROP: Logika po usunięciu konta */
-                onLogout={() => {
-                  // Ustawienie user na null spowoduje, że App.tsx
-                  // automatycznie przerenderuje się i pokaże <AuthScreen />
-                  // (patrz warunek: if (!user) return <AuthScreen /> w linii 207)
-                  setUser(null);
-                  setStats(INITIAL_STATS);
-                }} 
+                onLogout={handleLogout}
               />
             )}
+
+            {activeTab === 'settings' && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <SettingsView 
+                  settings={settings} 
+                  onToggle={handleToggleSettings}
+                  onLogout={handleLogout}
+                />
+              </motion.div>
+            )}
+
           </AnimatePresence>
         </div>
       </main>
@@ -492,21 +670,57 @@ const App: React.FC = () => {
         {activeTopic && (
           <QuizSession 
             questions={activeTopic.questions}
+            initialIndex={quizProgress[activeTopic.id]?.index || 0}
+            initialScore={quizProgress[activeTopic.id]?.score || 0}
+            initialWrongIndices={quizProgress[activeTopic.id]?.wrongIndices || []}
+            
+            onProgress={(currentIndex, currentScore, currentWrongIndices) => {
+              const newProgress = Math.min(100, Math.round(((currentIndex) / activeTopic.questions.length) * 100));
+              
+              setUnits(prev => prev.map(u => ({
+                ...u,
+                topics: u.topics.map(t => 
+                  t.id === activeTopic.id 
+                    ? { ...t, progress: Math.max(t.progress || 0, newProgress) } 
+                    : t
+                )
+              })));
+
+              setQuizProgress(prev => ({
+                ...prev,
+                [activeTopic.id]: { 
+                  index: currentIndex, 
+                  score: currentScore,
+                  wrongIndices: currentWrongIndices
+                }
+              }));
+            }}
+
             onFinish={(score) => {
               const passed = score >= activeTopic.questions.length * 0.6;
               const { nextLevel, nextDate } = calculateNextReview(activeTopic.srsLevel, passed);
+              
               setUnits(prev => prev.map(u => ({
                 ...u, 
                 topics: u.topics.map(t => t.id === activeTopic.id ? { ...t, progress: 100, srsLevel: nextLevel, nextReviewDate: nextDate } : t)
               })));
+              
               setStats(s => ({
                 ...s,
                 xp: s.xp + (passed ? 100 : 20),
                 gems: s.gems + (passed ? 25 : 5),
                 totalQuestionsAnswered: s.totalQuestionsAnswered + activeTopic.questions.length
               }));
+
+              setQuizProgress(prev => {
+                const newState = { ...prev };
+                delete newState[activeTopic.id];
+                return newState;
+              });
+
               setActiveTopic(null);
             }}
+
             onQuit={() => setActiveTopic(null)}
             onXpChange={(xp) => setStats(prev => ({ ...prev, xp: prev.xp + xp }))}
           />

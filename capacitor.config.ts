@@ -11,8 +11,8 @@ server: {
 
 },
 plugins: {
-  CapacitorHttp: {
-    enabled: true,
+    CapacitorHttp: {
+      enabled: false,
   },
 },
 };

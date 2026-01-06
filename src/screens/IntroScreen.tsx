@@ -1,187 +1,124 @@
-import React, { useState, useEffect, useRef } from 'react';
-// Importujemy ikony głośnika
-import { Volume2, VolumeX } from 'lucide-react'; 
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, Bug, HeartHandshake, Coffee, ArrowRight, Check } from 'lucide-react';
 
 interface IntroScreenProps {
   onFinish: () => void;
+  userName: string; // NOWE: Oczekujemy imienia użytkownika
 }
 
-export default function IntroScreen({ onFinish }: IntroScreenProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  
-  // Stan wyciszenia (domyślnie true, żeby autoplay zadziałał)
-  const [isMuted, setIsMuted] = useState<boolean>(true);
-  
-  const [canSkip, setCanSkip] = useState<boolean>(false);
-  const [timeLeft, setTimeLeft] = useState<number>(10);
+const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setCanSkip(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+  // Zredagowana treść podzielona na slajdy
+  const slides = [
+    {
+      id: 0,
+      icon: Sparkles,
+      color: "text-blue-500",
+      bgGradient: "from-blue-500/20 to-cyan-500/20",
+      title: `Cześć, ${userName}! 👋`, // ZMIANA: Personalizacja
+      content: "Witam Cię w BioMistrzu! To darmowa apka, która pomoże Ci w nauce biologii. Zero reklam, zero wersji premium – czysta wiedza i nauka poprzez zabawę."
+    },
+    {
+      id: 1,
+      icon: Bug,
+      color: "text-orange-500",
+      bgGradient: "from-orange-500/20 to-red-500/20",
+      title: "Eksperymentuj!",
+      content: "Baw się wszystkimi funkcjami. Jeśli coś nie działa, kliknij w czerwonego robaczka 🐞 w rogu ekranu. Masz pomysł na nową funkcję? Koniecznie napisz mi o tym w sekcji Ankieta!"
+    },
+    {
+      id: 2,
+      icon: HeartHandshake,
+      color: "text-purple-500",
+      bgGradient: "from-purple-500/20 to-pink-500/20",
+      title: "One Man Army",
+      content: "Pamiętaj, że apkę robię i opłacam zupełnie sam. Niedługo skończą mi się pieniądze z osiemnastki 😅 i będę musiał usunąć apkę albo dodać reklamy (BLEH 🤮). Nie pozwólmy na to!"
+    },
+    {
+      id: 3,
+      icon: Coffee,
+      color: "text-amber-500",
+      bgGradient: "from-amber-500/20 to-yellow-500/20",
+      title: "Wesprzyj mnie",
+      content: "Jeśli BioMistrz Ci się spodoba, możesz postawić mi wirtualną kawę na buycoffee.to (link w menu). Każde 5 zł to wielka pomoc w utrzymaniu serwerów. Dzięki, że jesteś! 💙"
+    }
+  ];
 
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleFinish = () => {
-    try {
-      localStorage.setItem('hasSeenIntro', 'true');
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-      onFinish();
-    } catch (e) {
-      console.log('Błąd zapisu:', e);
+  const handleNext = () => {
+    if (currentIndex < slides.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+    } else {
       onFinish();
     }
   };
 
-  // Funkcja przełączająca dźwięk
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
+  const CurrentIcon = slides[currentIndex].icon;
 
   return (
-    <div style={styles.container}>
-      <div style={styles.videoContainer}>
-        <video
-          ref={videoRef}
-          src="/intro_video.mp4"
-          style={styles.video}
-          autoPlay
-          muted={isMuted} // Sterowane stanem
-          playsInline
-          loop={false}
-        />
+    <div className="fixed inset-0 z-[100] bg-white dark:bg-gray-900 flex flex-col items-center justify-center p-6 transition-colors duration-300">
+      
+      {/* Kontener slajdu */}
+      <div className="w-full max-w-md">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentIndex}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="flex flex-col items-center text-center space-y-6"
+          >
+            {/* Ikona z tłem */}
+            <div className={`p-8 rounded-[2.5rem] bg-gradient-to-br ${slides[currentIndex].bgGradient} shadow-lg mb-4`}>
+              <CurrentIcon className={`w-20 h-20 ${slides[currentIndex].color}`} />
+            </div>
 
-        {/* PRZYCISK OD DŹWIĘKU (Nakładka na wideo) */}
-        <button 
-          onClick={toggleMute}
-          style={styles.muteButton}
+            {/* Tekst */}
+            <div className="space-y-4">
+              <h2 className="text-3xl font-black text-gray-800 dark:text-white tracking-tight">
+                {slides[currentIndex].title}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 font-medium leading-relaxed text-lg">
+                {slides[currentIndex].content}
+              </p>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Nawigacja na dole */}
+      <div className="absolute bottom-10 left-0 right-0 px-6 flex flex-col items-center gap-8">
+        
+        {/* Kropki postępu */}
+        <div className="flex gap-2">
+          {slides.map((slide, index) => (
+            <div 
+              key={slide.id}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                index === currentIndex 
+                  ? `w-8 ${slides[currentIndex].color.replace('text-', 'bg-')}` 
+                  : 'w-2 bg-gray-200 dark:bg-gray-700'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Przycisk Dalej */}
+        <button
+          onClick={handleNext}
+          className="w-full max-w-xs bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:scale-105 active:scale-95 transition-all"
         >
-          {isMuted ? (
-            <>
-              <VolumeX color="white" size={24} />
-              <span style={{ marginLeft: 8, color: 'white', fontWeight: 600 }}>Włącz dźwięk</span>
-            </>
+          {currentIndex === slides.length - 1 ? (
+            <>Zaczynamy! <Check className="w-5 h-5" /></>
           ) : (
-             <Volume2 color="white" size={24} />
+            <>Dalej <ArrowRight className="w-5 h-5" /></>
           )}
         </button>
       </div>
-
-      <div style={styles.contentContainer}>
-        <h2 style={styles.title}>Witaj w aplikacji!</h2>
-        <p style={styles.subtitle}>
-          Zanim zaczniemy, posłuchaj krótkiego wstępu.
-        </p>
-
-        {canSkip ? (
-          <button style={styles.button} onClick={handleFinish}>
-            Przejdź do aplikacji
-          </button>
-        ) : (
-          <div style={styles.disabledButton}>
-            <span style={styles.disabledText}>
-              Pominiesz za {timeLeft}s
-            </span>
-          </div>
-        )}
-      </div>
     </div>
   );
-}
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    height: '100vh',
-    backgroundColor: '#000',
-    overflow: 'hidden',
-  },
-  videoContainer: {
-    height: '60%',
-    width: '100%',
-    position: 'relative' as const,
-  },
-  video: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover' as const,
-    display: 'block',
-  },
-  // Nowy styl dla przycisku wyciszania
-  muteButton: {
-    position: 'absolute' as const,
-    bottom: '20px',
-    right: '20px',
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    border: '1px solid rgba(255,255,255,0.3)',
-    borderRadius: '30px',
-    padding: '10px 20px',
-    display: 'flex',
-    alignItems: 'center',
-    cursor: 'pointer',
-    zIndex: 20,
-    transition: 'background 0.3s',
-  },
-  contentContainer: {
-    height: '40%',
-    backgroundColor: '#fff',
-    borderTopLeftRadius: '24px',
-    borderTopRightRadius: '24px',
-    marginTop: '-20px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '24px',
-    zIndex: 10,
-    position: 'relative' as const,
-  },
-  title: {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    marginBottom: '8px',
-    color: '#333',
-    marginTop: 0,
-    textAlign: 'center' as const,
-  },
-  subtitle: {
-    fontSize: '16px',
-    color: '#666',
-    textAlign: 'center' as const,
-    marginBottom: '30px',
-    marginTop: 0,
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    padding: '15px 40px',
-    borderRadius: '30px',
-    border: 'none',
-    color: '#fff',
-    fontSize: '18px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    width: '80%',
-    maxWidth: '300px',
-  },
-  disabledButton: {
-    padding: '15px 0',
-    width: '80%',
-    textAlign: 'center' as const,
-    cursor: 'not-allowed',
-  },
-  disabledText: {
-    color: '#999',
-    fontSize: '14px',
-  },
 };
+
+export default IntroScreen;

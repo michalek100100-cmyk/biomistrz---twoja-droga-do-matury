@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../components/firebaseConfig';
-import { LogIn, UserPlus, AlertCircle } from 'lucide-react';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../components/firebaseConfig';
+import { LogIn, UserPlus, AlertCircle, User } from 'lucide-react';
 
 // Stała z Twoim linkiem
 const POLICY_URL = "https://docs.google.com/document/d/e/2PACX-1vRlTtVsfqBj7YFibRZXc4QYcZyNu8G1N2Y0GARW2S1fbHXFQaavHqQHQl45NoW7OEahqiJb-0S_S5Eq/pub";
@@ -10,30 +11,55 @@ export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState(''); // NOWY STAN: Nazwa użytkownika
   const [error, setError] = useState('');
   
-  // Nowy stan do checkboxa
   const [acceptPolicy, setAcceptPolicy] = useState(false);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // WALIDACJA POLITYKI PRYWATNOŚCI
-    // Sprawdzamy tylko przy rejestracji (!isLogin)
-    if (!isLogin && !acceptPolicy) {
-      setError("Aby utworzyć konto, musisz zaakceptować Politykę Prywatności.");
-      return;
+    // WALIDACJA REJESTRACJI
+    if (!isLogin) {
+      if (!name.trim()) {
+        setError("Podaj nazwę użytkownika.");
+        return;
+      }
+      if (!acceptPolicy) {
+        setError("Aby utworzyć konto, musisz zaakceptować Politykę Prywatności.");
+        return;
+      }
     }
 
     try {
       if (isLogin) {
+        // --- LOGOWANIE ---
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        // --- REJESTRACJA ---
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 1. Aktualizujemy profil Firebase Auth (żeby displayName było dostępne od razu)
+        await updateProfile(user, {
+          displayName: name
+        });
+
+        // 2. Tworzymy od razu dokument w bazie Firestore z wybraną nazwą
+        // Dzięki temu App.tsx pobierze poprawną nazwę, a nie domyślną
+        await setDoc(doc(db, 'users', user.uid), {
+          stats: {
+            name: name,
+            xp: 0,
+            gems: 100,
+            streak: 1, // Nowy użytkownik dostaje 1 dzień streaka na zachętę
+            avatar: ''
+          },
+          lastActive: new Date().toISOString()
+        });
       }
     } catch (err: any) {
-      // Tłumaczenie błędów Firebase na polski (opcjonalne, dla lepszego UX)
       if (err.code === 'auth/email-already-in-use') {
         setError("Ten email jest już zajęty.");
       } else if (err.code === 'auth/weak-password') {
@@ -52,7 +78,7 @@ export default function AuthScreen() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-black text-blue-600 mb-2">BioMistrz</h1>
           <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">
-            {isLogin ? 'Witaj ponownie!' : 'Rozpocznij naukę'}
+            {isLogin ? 'Witaj ponownie!' : 'Stwórz swoje konto'}
           </p>
         </div>
 
@@ -63,6 +89,22 @@ export default function AuthScreen() {
         )}
 
         <form onSubmit={handleAuth} className="space-y-4">
+          
+          {/* POLE NAZWY UŻYTKOWNIKA - Widoczne tylko przy rejestracji */}
+          {!isLogin && (
+            <div className="relative animate-in fade-in slide-in-from-top-2">
+              <input
+                type="text"
+                placeholder="Twoja nazwa / Nick"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full p-4 pl-12 bg-gray-50 rounded-xl font-bold text-gray-700 outline-none focus:ring-2 ring-blue-200 transition-all"
+                maxLength={15} // Ograniczenie długości, żeby nie psuło UI
+              />
+              <User className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+            </div>
+          )}
+
           <input
             type="email"
             placeholder="Email"
@@ -78,7 +120,7 @@ export default function AuthScreen() {
             className="w-full p-4 bg-gray-50 rounded-xl font-bold text-gray-700 outline-none focus:ring-2 ring-blue-200 transition-all"
           />
           
-          {/* CHECKBOX POLITYKI PRYWATNOŚCI (Tylko przy rejestracji) */}
+          {/* CHECKBOX POLITYKI */}
           {!isLogin && (
             <div className="flex items-start gap-3 px-2 py-2">
               <input 
@@ -95,7 +137,7 @@ export default function AuthScreen() {
                   target="_blank" 
                   rel="noreferrer"
                   className="text-blue-600 underline hover:text-blue-800 transition-colors"
-                  onClick={(e) => e.stopPropagation()} // Żeby kliknięcie w link nie przełączało checkboxa (opcjonalne)
+                  onClick={(e) => e.stopPropagation()}
                 >
                   Politykę Prywatności
                 </a>
@@ -113,8 +155,9 @@ export default function AuthScreen() {
         <button 
           onClick={() => {
             setIsLogin(!isLogin);
-            setError(''); // Czyścimy błędy przy przełączaniu
-            setAcceptPolicy(false); // Resetujemy checkbox
+            setError(''); 
+            setAcceptPolicy(false);
+            setName(''); // Czyścimy nazwę przy przełączaniu
           }}
           className="w-full mt-4 text-gray-400 font-bold text-xs uppercase hover:text-blue-500 transition-colors"
         >

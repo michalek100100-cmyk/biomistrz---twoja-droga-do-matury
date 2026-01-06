@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview"
   },
- "dependencies": {
+  "dependencies": {
     "@capacitor/android": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
     "@react-navigation/native": "^7.1.26",
@@ -26,6 +26,7 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "@types/node": "^22.14.0",

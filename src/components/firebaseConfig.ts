@@ -1,10 +1,10 @@
 // src/firebaseConfig.ts
 import { initializeApp } from "firebase/app";
-// CHANGE: Import initializeAuth and persistence instead of just getAuth
 import { initializeAuth, indexedDBLocalPersistence } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+// ZMIANA 1: Dodaj import initializeFirestore
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import { Capacitor } from "@capacitor/core";
 
-// YOUR FIREBASE CONFIG:
 const firebaseConfig = {
   apiKey: "AIzaSyARqb5dClJzZPdVSDRQXQl5MO9q2Ewz9UI",
   authDomain: "biomistrz-5d386.firebaseapp.com",
@@ -15,14 +15,22 @@ const firebaseConfig = {
   measurementId: "G-ZC9TRFV63Z"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// FIX FOR CAPACITOR:
-// We use initializeAuth to explicitly set persistence to IndexedDB.
-// This prevents the "gapi.iframes.getContext" crash on iOS/Android.
 export const auth = initializeAuth(app, {
   persistence: indexedDBLocalPersistence
 });
 
-export const db = getFirestore(app);
+// ZMIANA 2: Konfiguracja bazy danych pod Androida
+// Androidowe WebView czasem blokuje WebSockety. To ustawienie to naprawia.
+let db;
+
+if (Capacitor.isNativePlatform()) {
+  db = initializeFirestore(app, {
+    experimentalForceLongPolling: true, // <--- TO JEST KLUCZ DO SUKCESU NA ANDROIDZIE
+  });
+} else {
+  db = getFirestore(app);
+}
+
+export { db };
