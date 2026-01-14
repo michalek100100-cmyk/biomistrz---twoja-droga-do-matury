@@ -526,12 +526,12 @@
         "category": "Mikroelementy (Źródła)",
         "question": "Ryby morskie i owoce morza są bogatym, naturalnym źródłem:",
         "options": [
-          "Tylko fluor jest poprawny",
-          "Tylko jod jest poprawny",
-          "Odpowiedzi A i B są poprawne",
-          "Żadna z odpowiedzi nie jest poprawna"
+          "fluoru i jodu",
+          "jodu i żelaza",
+          "żelaza i jodu",
+          "fluoru i żelaza"
         ],
-        "answer": "Odpowiedzi A i B są poprawne",
+        "answer": "fluoru i jodu",
         "explanation": "Środowisko morskie jest bogate zarówno w jod, jak i fluor, dlatego produkty pochodzenia morskiego są ich głównym źródłem."
       },
       {
@@ -19904,7 +19904,7 @@
       "Obie reagują w tym samym momencie",
       "Zależy to wyłącznie od pory roku"
     ],
-    "answer": "Ofiar",
+    "answer": "Ofiar (najpierw rośnie ich liczba)",
     "explanation": "Wzrost liczebności ofiar stwarza bazę pokarmową dla drapieżników, których liczba zaczyna rosnąć z pewnym opóźnieniem."
   },
   "",
