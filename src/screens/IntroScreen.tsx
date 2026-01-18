@@ -34,7 +34,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
       color: "text-purple-500",
       bgGradient: "from-purple-500/20 to-pink-500/20",
       title: "One Man Army",
-      content: "Pamiętaj, że apkę robię i opłacam zupełnie sam. Niedługo skończą mi się pieniądze z osiemnastki 😅 i będę musiał usunąć apkę albo dodać reklamy (BLEH 🤮). Nie pozwólmy na to!"
+      content: "Pamiętaj, że apkę robię i opłacam zupełnie sam. Niedługo skończą mi się pieniądze z osiemnastki 😅 i będę musiał usunąć apkę albo dodać reklamy (BLEH 🤮)."
     },
     {
       id: 3,
@@ -42,7 +42,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
       color: "text-amber-500",
       bgGradient: "from-amber-500/20 to-yellow-500/20",
       title: "Wesprzyj mnie",
-      content: "Jeśli BioMistrz Ci się spodoba, możesz postawić mi wirtualną kawę na buycoffee.to (link w menu). Każde 5 zł to wielka pomoc w utrzymaniu serwerów. Dzięki, że jesteś! 💙"
+      content: "Jeśli BioMistrz Ci się podoba, proszę wesprzyj utrzymanie aplikacji na buycoffee.to (przycisk kawy na górze). Każde 5 zł miesięcznie to wielka pomoc w utrzymaniu serwerów. Dzięki, że jesteś! 💙"
     }
   ];
 
