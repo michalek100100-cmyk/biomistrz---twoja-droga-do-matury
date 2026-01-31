@@ -9,7 +9,7 @@ import Logo from './components/Logo';
 const App: React.FC = () => {
   const IOS_LINK = "https://apps.apple.com/pl/app/biomistrz/id6757200264?l=pl";
   const COFFEE_LINK = "https://buycoffee.to/biomistrz";
-  const ANDROID_TEST_LINK = "https://play.google.com/apps/test/RQrUwTrAJ9I/ahAO29uNSTWgoeExuO9JkEoG_eMUE1zq_OSGojVzmcRqKLmWLHNOajOTifm5828NywtrA4X8wnle6qyCtI0ImdrGJi";
+  const ANDROID_TEST_LINK = "https://play.google.com/store/apps/details?id=com.biomistrz.app&hl=pl";
   const WHATSAPP_LINK = "https://chat.whatsapp.com/LnOYu9mXnfgFWSLQYQuanY";
 
   const [showAndroidModal, setShowAndroidModal] = useState(false);
