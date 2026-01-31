@@ -46,9 +46,9 @@ const App: React.FC = () => {
               <div className="w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl">
                 🤖
               </div>
-              <h3 className="text-3xl font-black text-blue-950 mb-4">Wersja Testowa</h3>
+              <h3 className="text-3xl font-black text-blue-950 mb-4">Pobierz na android</h3>
               <p className="text-slate-600 mb-8 leading-relaxed">
-                BioMistrz na Androida jest obecnie w fazie intensywnych testów. Możesz dołączyć do grona testerów i zacząć korzystać z aplikacji już teraz, pomagając mi ją ulepszać!
+                Możesz też dołączyć do grupy testerów którzy mi pomagają na whatsapp! 
               </p>
               <div className="flex flex-col gap-4">
                 <a 
