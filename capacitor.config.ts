@@ -2,18 +2,18 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.biomistrz.app',
-  appName: 'biomistrz---matura-z-biologii',
+  appName: 'Biomistrz',
   webDir: 'dist',
 
 
-server: {
-  androidScheme: 'https'
+  server: {
+    androidScheme: 'https'
 
-},
-plugins: {
+  },
+  plugins: {
     CapacitorHttp: {
       enabled: false,
+    },
   },
-},
 };
 export default config;

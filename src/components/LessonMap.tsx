@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Star, CheckCircle } from 'lucide-react';
+import { Star, Check } from 'lucide-react';
 import { Topic } from '../types';
 
 interface LessonMapProps {
@@ -12,62 +11,87 @@ interface LessonMapProps {
 
 const LessonMap: React.FC<LessonMapProps> = ({ topics, onStartTopic }) => {
   return (
-    <div className="flex flex-col items-center py-12 space-y-24 max-w-lg mx-auto relative">
-      <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-2 bg-gray-100 -z-10 rounded-full" />
+    <div className="flex flex-col items-center py-20 space-y-16 max-w-lg mx-auto relative">
+
+      {/* TŁO OZDOBNE (Bloby w tle) */}
+      <div className="fixed top-1/3 left-0 w-64 h-64 bg-blue-500/20 rounded-full blur-[100px] pointer-events-none -z-10" />
+      <div className="fixed bottom-1/3 right-0 w-80 h-80 bg-purple-500/20 rounded-full blur-[100px] pointer-events-none -z-10" />
+
+      {/* LINIA ŁĄCZĄCA (Subtelna) */}
+      <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-gradient-to-b from-transparent via-gray-300 to-transparent -z-10" />
 
       {topics.map((topic, index) => {
         const isCompleted = topic.progress === 100;
-        const offset = Math.sin(index * 1.5) * 80;
+
+        // Offset dla efektu węża
+        const offset = Math.sin(index * 1.8) * 70;
 
         return (
-          <motion.div 
-            key={topic.id} 
-            initial={{ opacity: 0, scale: 0.5, x: offset }}
+          <motion.div
+            key={topic.id}
+            initial={{ opacity: 0, scale: 0.8, x: offset }}
             whileInView={{ opacity: 1, scale: 1, x: offset }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            className="relative flex flex-col items-center group"
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ type: "spring", bounce: 0.4 }}
+            className="relative z-10 group"
           >
-            {/* Tooltip */}
-            <div className="absolute -top-14 left-1/2 -translate-x-1/2 whitespace-nowrap bg-gray-800 text-white px-4 py-2 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none scale-90 group-hover:scale-100">
-              {topic.title}
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-gray-800 rotate-45" />
-            </div>
-
-            {/* Node */}
+            {/* PRZYCISK TEMATU (Glassmorphism) */}
             <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05, y: -5 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => onStartTopic(topic)}
-              className={`relative w-32 h-32 rounded-[2.5rem] flex items-center justify-center transition-all duo-button-shadow border-b-8 z-10 ${
-                isCompleted 
-                  ? 'bg-green-500 border-green-700 text-white' 
-                  : 'bg-blue-500 border-blue-700 text-white'
-              }`}
+              className={`
+                relative w-40 h-40 rounded-[2.5rem] flex flex-col items-center justify-center p-4
+                backdrop-blur-xl border border-white/20 shadow-2xl transition-all duration-300
+                ${isCompleted
+                  ? 'bg-green-500/10 border-green-500/30 text-green-600 shadow-[0_10px_40px_rgba(34,197,94,0.2)]'
+                  : 'bg-white/10 text-gray-700 hover:bg-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.1)]'
+                }
+              `}
             >
-              <span className="text-5xl filter drop-shadow-md">
-                {isCompleted ? <CheckCircle className="w-16 h-16" /> : topic.icon}
+              {/* Ikona */}
+              <span className="text-5xl mb-3 filter drop-shadow-lg transition-transform group-hover:scale-110 duration-300">
+                {isCompleted ? <Check className="w-12 h-12" /> : topic.icon}
               </span>
-               
+
+              {/* Tytuł */}
+              <span className="text-xs font-bold text-center leading-tight opacity-90 px-2 line-clamp-2 scientific-font">
+                {topic.title}
+              </span>
+
+              {/* Gwiazdki SRS (lewitujące nad przyciskiem) */}
               {topic.srsLevel > 0 && (
-                <div className="absolute -top-2 -right-2 bg-yellow-400 w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-lg">
-                  <Star className="w-6 h-6 text-white fill-white" />
+                <div className="absolute -top-3 -right-3 flex">
+                  {[...Array(Math.min(topic.srsLevel, 3))].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: i * 0.1 }} // <--- NAPRAWIONE TUTAJ
+                      className="bg-yellow-400 p-1.5 rounded-full border-2 border-white shadow-sm -ml-2 first:ml-0"
+                    >
+                      <Star className="w-3 h-3 text-white fill-white" />
+                    </motion.div>
+                  ))}
                 </div>
               )}
+
+              {/* Pasek postępu (Jako dolna krawędź) */}
+              <div className="absolute bottom-0 left-8 right-8 h-1 bg-gray-200/20 rounded-t-full overflow-hidden">
+                <div
+                  className={`h-full ${isCompleted ? 'bg-green-500' : 'bg-blue-500'}`}
+                  style={{ width: `${topic.progress}%` }}
+                />
+              </div>
             </motion.button>
 
-            {/* Label below */}
-            <div className="mt-8 text-center bg-white p-4 rounded-3xl shadow-sm border border-gray-100 w-48">
-               <h3 className="font-black text-gray-800 text-sm leading-tight mb-2">{topic.title}</h3>
-               <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                 <motion.div 
-                    initial={{ width: 0 }}
-                    whileInView={{ width: `${topic.progress}%` }}
-                    transition={{ duration: 1 }}
-                    className="h-full bg-green-500 rounded-full"
-                 />
-               </div>
-            </div>
+            {/* Linia łącząca węzeł z główną linią */}
+            <div
+              className={`absolute top-1/2 -z-10 h-px w-[70px] border-t-2 border-dashed border-gray-300
+              ${offset > 0 ? 'right-full mr-[-35px]' : 'left-full ml-[-35px]'}`}
+              style={{ width: Math.abs(offset) }}
+            />
+
           </motion.div>
         );
       })}

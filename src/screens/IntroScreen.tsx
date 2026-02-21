@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Bug, HeartHandshake, Coffee, ArrowRight, Check } from 'lucide-react';
+import { Sparkles, HeartHandshake, Coffee, ArrowRight, Check } from 'lucide-react';
 
 interface IntroScreenProps {
   onFinish: () => void;
@@ -18,31 +18,23 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
       color: "text-blue-500",
       bgGradient: "from-blue-500/20 to-cyan-500/20",
       title: `Cześć, ${userName}! 👋`, // ZMIANA: Personalizacja
-      content: "Witam Cię w BioMistrzu! To darmowa apka, która pomoże Ci w nauce biologii. Zero reklam, zero wersji premium – czysta wiedza i nauka poprzez zabawę."
-    },
-    {
-      id: 1,
-      icon: Bug,
-      color: "text-orange-500",
-      bgGradient: "from-orange-500/20 to-red-500/20",
-      title: "Eksperymentuj!",
-      content: "Baw się wszystkimi funkcjami. Jeśli coś nie działa, kliknij w czerwonego robaczka 🐞 w rogu ekranu. Masz pomysł na nową funkcję? Koniecznie napisz mi o tym w sekcji Ankieta!"
+      content: "pamiętaj że to korzystasz z DARMOWEJ aplikacji, Z której NIC nie zarabiam"
     },
     {
       id: 2,
       icon: HeartHandshake,
       color: "text-purple-500",
       bgGradient: "from-purple-500/20 to-pink-500/20",
-      title: "One Man Army",
-      content: "Pamiętaj, że apkę robię i opłacam zupełnie sam. Niedługo skończą mi się pieniądze z osiemnastki 😅 i będę musiał usunąć apkę albo dodać reklamy (BLEH 🤮)."
+      title: "Sam jak palec",
+      content: "Apkę robię i opłacam zupełnie sam. udos†ępnij ją na grupie klasowej i pokaż rodzicom, bo może oni będą chcieli zainwestować w taką innicjatywę. "
     },
     {
       id: 3,
       icon: Coffee,
       color: "text-amber-500",
       bgGradient: "from-amber-500/20 to-yellow-500/20",
-      title: "Wesprzyj mnie",
-      content: "Jeśli BioMistrz Ci się podoba, proszę wesprzyj utrzymanie aplikacji na buycoffee.to (przycisk kawy na górze). Każde 5 zł miesięcznie to wielka pomoc w utrzymaniu serwerów. Dzięki, że jesteś! 💙"
+      title: "Każde 5zł miesięcznie = 1/400 miesięcznego utrzymania",
+      content: "Każde 5-10 zł miesięczne to duże wsparcie w urzymaniu aplikacji, nie pozwól bym musiał usunąć tą aplikację z powodu kosztów utrzymania."
     }
   ];
 
@@ -57,8 +49,8 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
   const CurrentIcon = slides[currentIndex].icon;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-white dark:bg-gray-900 flex flex-col items-center justify-center p-6 transition-colors duration-300">
-      
+    <div className="fixed inset-0 z-[100] bg-[#afe9af] flex flex-col items-center justify-center p-6 transition-colors duration-300">
+
       {/* Kontener slajdu */}
       <div className="w-full max-w-md">
         <AnimatePresence mode="wait">
@@ -77,10 +69,10 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
 
             {/* Tekst */}
             <div className="space-y-4">
-              <h2 className="text-3xl font-black text-gray-800 dark:text-white tracking-tight">
+              <h2 className="text-3xl font-black text-white tracking-tight">
                 {slides[currentIndex].title}
               </h2>
-              <p className="text-gray-600 dark:text-gray-300 font-medium leading-relaxed text-lg">
+              <p className="text-white font-medium leading-relaxed text-lg">
                 {slides[currentIndex].content}
               </p>
             </div>
@@ -90,17 +82,16 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
 
       {/* Nawigacja na dole */}
       <div className="absolute bottom-10 left-0 right-0 px-6 flex flex-col items-center gap-8">
-        
+
         {/* Kropki postępu */}
         <div className="flex gap-2">
           {slides.map((slide, index) => (
-            <div 
+            <div
               key={slide.id}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentIndex 
-                  ? `w-8 ${slides[currentIndex].color.replace('text-', 'bg-')}` 
-                  : 'w-2 bg-gray-200 dark:bg-gray-700'
-              }`}
+              className={`h-2 rounded-full transition-all duration-300 ${index === currentIndex
+                ? `w-8 ${slides[currentIndex].color.replace('text-', 'bg-')}`
+                : 'w-2 bg-gray-200 '
+                }`}
             />
           ))}
         </div>
@@ -108,7 +99,7 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
         {/* Przycisk Dalej */}
         <button
           onClick={handleNext}
-          className="w-full max-w-xs bg-gray-900 dark:bg-white text-white dark:text-gray-900 py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:scale-105 active:scale-95 transition-all"
+          className="w-full max-w-xs bg-gray-900  text-white  py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:scale-105 active:scale-95 transition-all"
         >
           {currentIndex === slides.length - 1 ? (
             <>Zaczynamy! <Check className="w-5 h-5" /></>

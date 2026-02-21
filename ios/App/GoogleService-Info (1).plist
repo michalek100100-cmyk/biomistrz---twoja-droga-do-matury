@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBQuAO9kEYXyiiE0ydJtX--NX_lMfh-yO4</string>
+	<key>GCM_SENDER_ID</key>
+	<string>587140568626</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.biomistrz.app</string>
+	<key>PROJECT_ID</key>
+	<string>biomistrz-5d386</string>
+	<key>STORAGE_BUCKET</key>
+	<string>biomistrz-5d386.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:587140568626:ios:2a227bba7ec92639524e2b</string>
+</dict>
+</plist>

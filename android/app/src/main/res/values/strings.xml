@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">biomistrz---matura-z-biologii</string>
-    <string name="title_activity_main">biomistrz---matura-z-biologii</string>
+    <string name="app_name">Biomistrz</string>
+    <string name="title_activity_main">Biomistrz</string>
     <string name="package_name">com.biomistrz.app</string>
     <string name="custom_url_scheme">com.biomistrz.app</string>
 </resources>

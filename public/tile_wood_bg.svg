@@ -1,0 +1,22 @@
+<svg width="400" height="200" viewBox="0 0 400 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Podstawa deski -->
+  <rect x="10" y="10" width="380" height="180" rx="15" fill="#5D4037" />
+  <rect x="15" y="15" width="370" height="170" rx="12" fill="#795548" />
+  
+  <!-- Słoje drewna -->
+  <path d="M20 40C100 35 300 45 380 40" stroke="#5D4037" stroke-width="2" opacity="0.3"/>
+  <path d="M20 70C150 75 250 65 380 70" stroke="#5D4037" stroke-width="2" opacity="0.3"/>
+  <path d="M20 100C80 105 320 95 380 100" stroke="#5D4037" stroke-width="2" opacity="0.3"/>
+  <path d="M20 130C180 125 220 135 380 130" stroke="#5D4037" stroke-width="2" opacity="0.3"/>
+  <path d="M20 160C120 165 280 155 380 160" stroke="#5D4037" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Sęki -->
+  <circle cx="80" cy="85" r="10" fill="#4E342E" opacity="0.4"/>
+  <path d="M70 85C70 80 90 80 90 85S70 95 70 85" stroke="#3E2723" stroke-width="1" opacity="0.5"/>
+  <circle cx="320" cy="140" r="8" fill="#4E342E" opacity="0.4"/>
+  
+  <!-- Kanty/Cieniowanie -->
+  <path d="M15 15H385V185H15V15Z" stroke="#3E2723" stroke-width="4" stroke-linejoin="round" opacity="0.4"/>
+  <path d="M15 15L385 15" stroke="white" stroke-width="2" opacity="0.1"/>
+  <path d="M15 185L385 185" stroke="black" stroke-width="2" opacity="0.2"/>
+</svg>

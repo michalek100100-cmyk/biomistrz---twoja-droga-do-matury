@@ -1,78 +1,134 @@
-import React from 'react';
-import { Flame, Diamond, BookOpen, Trophy } from 'lucide-react';
+// src/components/TopBar.tsx
+// Kompaktowy TopBar dla mobile - tylko najważniejsze elementy
+import React, { useEffect, useState } from 'react';
+import { Flame, PackageOpen } from 'lucide-react';
 import { UserStats } from '../types';
+import { xpToLevel, getTierFromElo, getPlayerRanking, TierInfo, INITIAL_ELO } from '../services/rankingService';
+import InventoryModal from './InventoryModal';
 
 interface TopBarProps {
   stats: UserStats;
-  onNavigate: (tab: string) => void; // NOWE: Funkcja do zmiany zakładki
-  reviewCount: number;               // NOWE: Liczba powtórek do badge'a
+  userId?: string;
+  onNavigate: (tab: string) => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ stats, onNavigate, reviewCount }) => {
+const TopBar: React.FC<TopBarProps> = ({ stats, userId, onNavigate }) => {
+  const [tierInfo, setTierInfo] = useState<TierInfo | null>(null);
+  const [elo, setElo] = useState<number>(INITIAL_ELO);
+  const [showInventory, setShowInventory] = useState(false);
+
+  const level = xpToLevel(stats.xp);
+
+  // Fetch ranking on mount
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchRanking = async () => {
+      try {
+        const ranking = await getPlayerRanking(userId);
+        setElo(ranking.elo);
+        setTierInfo(getTierFromElo(ranking.elo));
+      } catch (error) {
+        console.error('Failed to fetch ranking:', error);
+        setTierInfo(getTierFromElo(INITIAL_ELO));
+      }
+    };
+
+    fetchRanking();
+  }, [userId]);
+
   return (
-    <div className="flex items-center justify-between px-6 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)] bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40 transition-colors duration-300">
-      
-      {/* LEWA STRONA: Statystyki */}
-      <div className="flex gap-4 sm:gap-6">
-        <div className="flex items-center gap-2 group cursor-pointer" title="Twój streak">
-          <Flame className="w-6 h-6 text-orange-500 fill-orange-500" />
-          <span className="font-extrabold text-orange-500">{stats.streak}</span>
-        </div>
-        
-        <div className="flex items-center gap-2 group cursor-pointer" title="Twoje klejnoty">
-          <Diamond className="w-6 h-6 text-blue-400 fill-blue-400" />
-          <span className="font-extrabold text-blue-400">{stats.gems}</span>
-        </div>
-      </div>
-      
-      {/* ŚRODEK / PRAWA STRONA: Nowe przyciski nawigacyjne */}
-      <div className="flex items-center gap-2 md:gap-4 mr-auto ml-6 md:ml-12">
-        
-        {/* Przycisk Trening */}
-        <button 
-          onClick={() => onNavigate('practice')}
-          className="relative p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors group"
-          title="Trening / Powtórki"
-        >
-          <BookOpen className="w-6 h-6 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors" />
-          {reviewCount > 0 && (
-             <span className="absolute top-1 right-1 flex h-3 w-3">
-               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-               <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500 text-[8px] text-white font-bold items-center justify-center">
-                 {/* Opcjonalnie: {reviewCount} jeśli chcesz liczbę, ale kropka jest czystsza */}
-               </span>
-             </span>
-          )}
-        </button>
+    <>
+      <div
+        className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] md:pt-[calc(env(safe-area-inset-top)+1rem)] backdrop-blur-xl border-b sticky top-0 z-40 bg-[#2ca02c]/80 border-[#228b22]/30 transition-all duration-300"
+      >
 
-        {/* Przycisk Ranking */}
-        <button 
-          onClick={() => onNavigate('leaderboard')}
-          className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors group"
-          title="Ranking"
+        {/* LEFT: Streak with warning */}
+        {(() => {
+          // Calculate hours until midnight Polish time (Europe/Warsaw)
+          const now = new Date();
+          const polandTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
+          const hoursUntilMidnight = 24 - polandTime.getHours() - (polandTime.getMinutes() / 60);
+
+          // Show warning if less than 5 hours left (19:00+) and goal not complete
+          const isWarning = hoursUntilMidnight <= 5 && !stats.dailyGoalCompleted && stats.streak > 0;
+
+          return (
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className={`flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full transition-all ${isWarning
+                ? 'bg-red-100 animate-pulse ring-2 ring-red-500/50'
+                : 'bg-orange-50'
+                }`}>
+                <Flame className={`w-5 h-5 md:w-6 md:h-6 ${isWarning ? 'text-red-500 fill-red-500' : 'text-orange-500 fill-orange-500'}`} />
+                <span className={`font-black text-sm md:text-base ${isWarning ? 'text-red-600' : 'text-orange-600'}`}>
+                  {stats.streak}
+                </span>
+                {isWarning && (
+                  <span className="text-red-500 font-black text-sm md:text-base animate-bounce">!</span>
+                )}
+              </div>
+
+              {/* INVENTORY BUTTON */}
+              <button
+                onClick={() => setShowInventory(true)}
+                className="p-1.5 md:p-2 bg-purple-500/10 hover:bg-purple-500/20 rounded-full transition-colors border border-purple-500/30 text-purple-600 shadow-sm"
+              >
+                <PackageOpen className="w-5 h-5 md:w-6 md:h-6" />
+              </button>
+            </div>
+          );
+        })()}
+
+        {/* CENTER: ELO Badge (klikalne → ranking) */}
+        {tierInfo && (
+          <button
+            onClick={() => onNavigate('leaderboard')}
+            className={`flex items-center gap-2 md:gap-3 px-4 py-1.5 md:px-6 md:py-2.5 rounded-full ${tierInfo.bgColor} border border-white/20 shadow-sm hover:scale-105 active:scale-95 transition-transform`}
+          >
+            <span className="text-lg md:text-xl">{tierInfo.icon}</span>
+            <span className={`font-black text-sm md:text-lg ${tierInfo.color}`}>{elo}</span>
+          </button>
+        )}
+
+        {/* RIGHT: Avatar + Level (klikalne → profil) */}
+        <button
+          onClick={() => onNavigate('profile')}
+          className="flex items-center gap-2 md:gap-4 hover:opacity-80 transition-opacity"
         >
-          <Trophy className="w-6 h-6 group-hover:text-yellow-500 dark:group-hover:text-yellow-400 transition-colors" />
+          <div className="text-right hidden xs:block">
+            {stats.activeTitle && (
+              <p className="text-[9px] md:text-[11px] font-black text-purple-200 uppercase tracking-widest leading-none mb-0.5 max-w-[80px] md:max-w-[120px] truncate">
+                {stats.activeTitle}
+              </p>
+            )}
+            <p className="text-xs md:text-lg font-black text-white leading-none truncate max-w-[80px] md:max-w-[120px]">
+              {stats.name}
+            </p>
+            <p className="text-[10px] md:text-sm font-bold text-white/70 uppercase">
+              Lvl {level}
+            </p>
+          </div>
+
+          <div className="relative">
+            <img
+              src={stats.avatar || `https://picsum.photos/seed/${stats.name}/40/40`}
+              alt="Avatar"
+              className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-purple-500 object-cover bg-gray-100"
+            />
+            {/* Level badge */}
+            <div className="absolute -bottom-1 -right-1 md:-bottom-1.5 md:-right-1.5 bg-purple-500 text-white text-[10px] md:text-xs font-black w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center border-2 border-white">
+              {level}
+            </div>
+          </div>
         </button>
       </div>
 
-      {/* PRAWA STRONA: Profil */}
-      <div className="flex items-center gap-3" onClick={() => onNavigate('profile')}>
-        <div className="text-right hidden sm:block cursor-pointer">
-          <p className="text-sm font-black text-gray-800 dark:text-white leading-none">
-            {stats.name}
-          </p>
-          <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
-            {stats.xp} XP
-          </p>
-        </div>
-        
-        <img 
-          src={stats.avatar || `https://picsum.photos/seed/${stats.name}/32/32`} 
-          alt="Avatar" 
-          className="w-10 h-10 rounded-full border-2 border-blue-500 object-cover bg-gray-50 dark:bg-gray-800 cursor-pointer hover:scale-105 transition-transform"
-        />
-      </div>
-    </div>
+      {
+        showInventory && userId && (
+          <InventoryModal userId={userId} onClose={() => setShowInventory(false)} />
+        )
+      }
+    </>
   );
 };
 

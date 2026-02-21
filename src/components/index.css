@@ -1,3 +1,47 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+    body {
+        font-family: 'Pangolin', cursive;
+        background-color: #afe9afff;
+        background-attachment: fixed;
+        min-height: 100vh;
+        overflow-x: hidden;
+    }
+}
+
+
+@layer utilities {
+    .crayon-border {
+        border-width: 3px;
+        border-style: solid;
+        border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+        transition: all 0.3s ease;
+    }
+
+    .crayon-border:hover {
+        transform: scale(1.01);
+    }
+
+    .crayon-pastel-green {
+        background-color: #f1fcf1;
+        border-color: #88c988;
+        color: #2d5a2d;
+    }
+
+    .crayon-pastel-green-active {
+        background-color: #e2f7e2;
+        border-color: #66bb66;
+        color: #1b4d1b;
+    }
+
+    .stats-font {
+        font-family: 'Cherry Bomb One', cursive;
+    }
+
+    .scientific-font {
+        font-family: 'Inter', sans-serif;
+    }
+}

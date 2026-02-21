@@ -1,0 +1,26 @@
+<svg width="500" height="100" viewBox="0 0 500 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Podstawa deski (Zwiększona wysokość) -->
+  <rect x="5" y="5" width="490" height="90" rx="14" fill="#5D4037" />
+  <rect x="8" y="8" width="484" height="84" rx="12" fill="#795548" />
+  
+  <!-- Słoje drewna (Przesunięte dla nowej wysokości) -->
+  <path d="M15 30C100 27 400 33 485 30" stroke="#5D4037" stroke-width="2.5" opacity="0.3"/>
+  <path d="M15 50C150 53 350 47 485 50" stroke="#5D4037" stroke-width="2.5" opacity="0.3"/>
+  <path d="M15 70C80 73 420 67 485 70" stroke="#5D4037" stroke-width="2.5" opacity="0.3"/>
+  
+  <!-- Sęki i niedoskonałości -->
+  <circle cx="45" cy="45" r="7" fill="#4E342E" opacity="0.4"/>
+  <circle cx="440" cy="65" r="6" fill="#4E342E" opacity="0.4"/>
+  
+  <!-- Ozdobny mech/listki -->
+  <g opacity="0.6">
+    <path d="M10 75C15 70 25 70 30 80C25 85 15 85 10 75Z" fill="#2d5a2d" />
+    <path d="M480 20C475 25 465 25 460 15C465 10 475 10 480 20Z" fill="#2d5a2d" />
+    <path d="M250 85C255 80 265 80 270 90C265 95 255 95 250 85Z" fill="#2d5a2d" opacity="0.4" />
+  </g>
+
+  <!-- Kanty/Cieniowanie -->
+  <path d="M8 8H492V92H8V8Z" stroke="#3E2723" stroke-width="3.5" stroke-linejoin="round" opacity="0.4"/>
+  <path d="M8 8L492 8" stroke="white" stroke-width="2" opacity="0.1"/>
+  <path d="M8 92L492 92" stroke="black" stroke-width="2" opacity="0.2"/>
+</svg>

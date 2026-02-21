@@ -1,0 +1,179 @@
+{
+    "currentVersion": "4.1.0",
+    "releases": [
+        {
+            "version": "4.1.0",
+            "date": "2026-02-20",
+            "title": "Klanowy Szał & Zaproszenia!",
+            "changes": [
+                {
+                    "type": "new",
+                    "text": "Wprowadziłem w pełni funkcjonalny SYSTEM KLANÓW! Twórz własne klany lub dołączaj do istniejących."
+                },
+                {
+                    "type": "new",
+                    "text": "Rozbudowany Czat Klanowy! Planuj strategię ze swoją ekipą bezpośrednio w panelu klanu."
+                },
+                {
+                    "type": "new",
+                    "text": "Ranking Klanów oraz Interaktywna Mapa! Zdobywajcie ELO wspólnie i zaznaczcie swoją dominację na ogólnopolskiej mapie klanów."
+                },
+                {
+                    "type": "new",
+                    "text": "Zaproś Znajomych! Lider oraz nowo wprowadzony Współlider mogą bez limitów wysyłać zaproszenia dla swoich znajomych prosto do klanu – zaproszeni ignorują wymogi minimalnego ELO."
+                },
+                {
+                    "type": "change",
+                    "text": "Aby stworzyć własny klan od zera, potrzebujesz 100 ELO i poświęcasz aż 100 kasztanów. Warto!"
+                }
+            ]
+        },
+        {
+            "version": "4.0.0",
+            "date": "2026-02-18",
+            "title": "Kolejna paczka zmian!!",
+            "changes": [
+                {
+                    "type": "fixed",
+                    "text": "NAPRAWIONY KRYTYCZNY BŁĄD ZNIKAJĄCEGO POSTĘPU! Teraz biologia i chemia mają oddzielne zapisy, nic już nie powinno ginąć - postęp, xp, streak elo itd. nie wiem natomiast czy odzyskacie poprzedni postęp PRZEPRASZAMMMMM "
+                },
+                {
+                    "type": "new",
+                    "text": "Teraz możesz kliknąć w awatar dowolnego gracza w rankingu, aby zobaczyć podgląd jego profilu, bio i statystyki!"
+                },
+                {
+                    "type": "new",
+                    "text": "Dodana funkcja 'Lubię to!' w profilach graczy. Budujmy pozytywną społeczność! ❤️"
+                },
+                {
+                    "type": "new",
+                    "text": "Wprowadzony system zgłaszania użytkowników (ikona flagi w profilu), aby BioMistrz był bezpiecznym miejscem dla wszystkich."
+                },
+                {
+                    "type": "new",
+                    "text": "Spotify jest naprawione. Nie przerywa muzyki, przy odpowiadaniu na pytania"
+                },
+                {
+                    "type": "new",
+                    "text": "W mojej Apce NIE MA BYĆ GEMÓW!!!! zamieniłem je na kasztany :DDD"
+                },
+                {
+                    "type": "new",
+                    "text": "Dodałem nowe grafiki, przez co zmienił się się wygląd apki. podium i menu to dopiero początek ;) "
+                },
+                {
+                    "type": "new",
+                    "text": "teraz w 1v1 można scrollować odpowiedzi, nie ukryją się poza ekran już !!!"
+                },
+                {
+                    "type": "fixed",
+                    "text": "Naprawione zapisywanie zmian w profilu (nazwa, bio, zdjęcie) - teraz zmiany zapisują się natychmiast i nie są nadpisywane przez stare dane."
+                },
+                {
+                    "type": "change",
+                    "text": "Wyłączone automatyczne odświeżanie aplikacji przy lagach (na prośbę użytkowników) - koniec z nieoczekiwanym restartem interfejsu!"
+                },
+                {
+                    "type": "fixed",
+                    "text": "Zmieniony wygląd apki"
+                }
+            ]
+        },
+        {
+            "version": "3.8.0",
+            "date": "2026-02-15",
+            "title": "Małe, duże zmiany",
+            "changes": [
+                {
+                    "type": "new",
+                    "text": "Spotify jest naprawione. Nie przerywa muzyki, przy odpowiadaniu na pytania"
+                },
+                {
+                    "type": "new",
+                    "text": "W mojej Apce NIE MA BYĆ GEMÓW!!!! zamieniłem je na kasztany :DDD"
+                },
+                {
+                    "type": "new",
+                    "text": "Dodałem nowe grafiki, przez co zmienił się się wygląd apki. podium i menu to dopiero początek ;) "
+                },
+                {
+                    "type": "new",
+                    "text": "teraz w 1v1 można scrollować odpowiedzi, nie ukryją się poza ekran już !!!"
+                },
+                {
+                    "type": "fixed",
+                    "text": "nie zdążyłem dodać tkanek zwierzęcych, dodam je jutro😭 "
+                }
+            ]
+        },
+        {
+            "version": "3.6.0",
+            "date": "2026-02-13",
+            "title": "Chemiaaaaaa!",
+            "changes": [
+                {
+                    "type": "new",
+                    "text": "Dodałem Quizy z chemii"
+                },
+                {
+                    "type": "new",
+                    "text": "Pamiętajcie o zgłaszaniu błędów"
+                }
+            ]
+        },
+        {
+            "version": "3.5.0",
+            "date": "2026-02-11",
+            "title": "📅 Kalendarz Nauki i Inteligentne Powtórki!",
+            "changes": [
+                {
+                    "type": "new",
+                    "text": "W pełni funkcjonalny Kalendarz Nauki – planuj i śledź swój postęp w przygotowaniach do matury."
+                },
+                {
+                    "type": "new",
+                    "text": "Inteligentna mapa powtórek (SRS) – zobacz pełną ścieżkę nauki na 1, 3, 7, 14, 21 i 90 dni w przód."
+                },
+                {
+                    "type": "new",
+                    "text": "Powiadomienia Przeglądarkowe – BioMistrz przypomni Ci o powtórce systemowym alertem, abyś niczego nie pominął."
+                },
+                {
+                    "type": "new",
+                    "text": "Nowy tryb ! KALAMBURY : rysujesz biologiczne zagadnienie, a znajomi zgadują!"
+                },
+                {
+                    "type": "fixed",
+                    "text": "małe poprawki"
+                },
+                {
+                    "type": "new",
+                    "text": "Wprowadziłem nową funkcję - szafa. zdobywaj klejnoty i odkrywaj nowe motywy!"
+                }
+            ]
+        },
+        {
+            "version": "3.4.0",
+            "date": "2026-02-08",
+            "title": "🎮 Walcz z botami i Ranking działa poprawnie!",
+            "changes": [
+                {
+                    "type": "new",
+                    "text": "Nie możesz znaleźć przeciwnika do 1v1? teraz to nie problem, po 5 sekundach oczekiwania będziesz walczył z botem"
+                },
+                {
+                    "type": "fixed",
+                    "text": "Ranking Teraz działa poprawnie, na podstawie ELO"
+                },
+                {
+                    "type": "new",
+                    "text": "W przypadku problemów z wydajnością aplikacji, (lagi) aplikacja sama się odświeża, i wraca do stanu poprzedniego, zapisując postęp lokalnie :)"
+                },
+                {
+                    "type": "fixed",
+                    "text": "Poprawki wydajności i stabilności"
+                }
+            ]
+        }
+    ]
+}

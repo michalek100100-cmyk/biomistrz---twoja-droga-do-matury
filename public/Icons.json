@@ -5,7 +5,7 @@
     "Bakterie i archeowce": "🧫",
     "Rośliny": "🌱",
     "Genetyka": "🧬",
-    "Zwierzęta i człowiek": "🧍",
+    "Zwierzęta i Człowiek": "🧍",
     "Inne": "📁"
   },
   "topics": {
@@ -20,7 +20,7 @@
     "Grzyby i porosty": "🍄",
     "Protisty": "🦠",
     "Zoologia": "🐾",
-    "Wirusy": "⚠️",
+    "Wirusy": "🦠",
     "Zmienność organizmów": "🎭",
     "Biotechnologia": "🧪",
     "Ewolucjonizm": "🦴",
@@ -36,6 +36,7 @@
     "Odżywianie się roślin": "🍃",
     "Rozmnażanie roślin": "🐝",
     "Wzrost i rozwój": "📈",
-    "Domyślny": "❓"
+    "Komórki" : "🦠",
+    "Domyślny": "🔬"
   }
 }

@@ -1,6 +1,6 @@
 
 {
-  "name": "BioMistrz - Matura z Biologii",
+  "name": "BioMistrz",
   "description": "Najlepsza aplikacja do nauki biologii dla maturzystów. System powtórek SRS, oficjalne arkusze CKE i interaktywna mapa wiedzy.",
   "requestFramePermissions": []
 }
