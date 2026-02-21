@@ -26,6 +26,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
   const [bio, setBio] = useState(stats.bio);
   const [avatar, setAvatar] = useState(stats.avatar);
   const [activeTitle, setActiveTitle] = useState(stats.activeTitle || '');
+  const [showAchievements, setShowAchievements] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const unlockedTitles = stats.achievements
@@ -98,55 +99,65 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
 
         {/* --- NOWE: Gablota Osiągnięć --- */}
         <div className="pt-2 pb-6 border-b-2 border-gray-100">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="bg-yellow-100 p-3 rounded-2xl">
-              <Award className="w-6 h-6 text-yellow-600" />
+          <div className="flex items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-yellow-100 p-3 rounded-2xl">
+                <Award className="w-6 h-6 text-yellow-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-gray-800">Gablota Osiągnięć</h3>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Twoje trofea i odznaki</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-black text-gray-800">Gablota Osiągnięć</h3>
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Twoje trofea i odznaki</p>
-            </div>
+            <button
+              onClick={() => setShowAchievements(!showAchievements)}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-black uppercase tracking-widest transition-colors"
+            >
+              {showAchievements ? 'Zwiń' : 'Rozwiń'}
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {stats.achievements && Object.values(stats.achievements).map(ach => (
-              <div
-                key={ach.id}
-                className={`relative flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all ${ach.unlocked
-                  ? 'bg-gradient-to-b from-yellow-50 to-amber-50 border-yellow-200 shadow-sm'
-                  : 'bg-gray-50 border-gray-100 grayscale-[0.6] opacity-70'
-                  }`}
-                title={`${ach.description}\nNagroda: ${ach.reward.xp} XP / ${ach.reward.gems} Kasztanów`}
-              >
-                {!ach.unlocked && (
-                  <div className="absolute top-2 right-2 bg-gray-200 p-1.5 rounded-full">
-                    <Lock className="w-3 h-3 text-gray-500" />
-                  </div>
-                )}
+          {showAchievements && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 animate-in slide-in-from-top-2 duration-300">
+              {stats.achievements && Object.values(stats.achievements).map(ach => (
+                <div
+                  key={ach.id}
+                  className={`relative flex flex-col items-center justify-center p-4 rounded-3xl border-2 transition-all ${ach.unlocked
+                    ? 'bg-gradient-to-b from-yellow-50 to-amber-50 border-yellow-200 shadow-sm'
+                    : 'bg-gray-50 border-gray-100 grayscale-[0.6] opacity-70'
+                    }`}
+                  title={`${ach.description}\nNagroda: ${ach.reward.xp} XP / ${ach.reward.gems} Kasztanów`}
+                >
+                  {!ach.unlocked && (
+                    <div className="absolute top-2 right-2 bg-gray-200 p-1.5 rounded-full">
+                      <Lock className="w-3 h-3 text-gray-500" />
+                    </div>
+                  )}
 
-                <div className="text-4xl mb-2 filter drop-shadow-sm group-hover:scale-110 transition-transform">{ach.icon}</div>
-                <h4 className={`text-[11px] font-black uppercase tracking-wide text-center leading-tight mb-2 ${ach.unlocked ? 'text-yellow-800' : 'text-gray-500'
-                  }`}>
-                  {ach.name}
-                </h4>
+                  <div className="text-4xl mb-2 filter drop-shadow-sm group-hover:scale-110 transition-transform">{ach.icon}</div>
+                  <h4 className={`text-[11px] font-black uppercase tracking-wide text-center leading-tight mb-2 ${ach.unlocked ? 'text-yellow-800' : 'text-gray-500'
+                    }`}>
+                    {ach.name}
+                  </h4>
 
-                {/* Pasek postępu dla zablokowanych */}
-                {!ach.unlocked && ach.target > 1 && (
-                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-auto">
-                    <div
-                      className="bg-blue-400 h-1.5 rounded-full"
-                      style={{ width: `${Math.min(100, (ach.progress / ach.target) * 100)}%` }}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-            {(!stats.achievements || Object.keys(stats.achievements).length === 0) && (
-              <div className="col-span-full py-8 text-center text-sm font-bold text-gray-400">
-                Graj i ucz się aby odblokowywać pierwsze odznaki!
-              </div>
-            )}
-          </div>
+                  {/* Pasek postępu dla zablokowanych */}
+                  {!ach.unlocked && ach.target > 1 && (
+                    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-auto">
+                      <div
+                        className="bg-blue-400 h-1.5 rounded-full"
+                        style={{ width: `${Math.min(100, (ach.progress / ach.target) * 100)}%` }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {(!stats.achievements || Object.keys(stats.achievements).length === 0) && (
+                <div className="col-span-full py-8 text-center text-sm font-bold text-gray-400">
+                  Graj i ucz się aby odblokowywać pierwsze odznaki!
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Avatar Selection */}

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { X, PackageOpen, Loader2, Sparkles } from 'lucide-react';
-import { InventoryItem, ActiveBuff } from '../types';
+import { InventoryItem, ActiveBuff, ItemRarity } from '../types';
 import { getInventory, ITEMS_DB, getRarityColor, getRarityLabel, useItem, getActiveBuffsClean } from '../services/inventoryService';
 
 interface InventoryModalProps {
     userId: string;
     onClose: () => void;
+    onOpenChest: (chestId: string, reward: { baseId: string, rarity: ItemRarity }) => void;
 }
 
-const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose }) => {
+const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose, onOpenChest }) => {
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [activeBuffs, setActiveBuffs] = useState<ActiveBuff[]>([]);
     const [loading, setLoading] = useState(true);
@@ -32,15 +34,23 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose }) => {
     }, [userId]);
 
     const handleUseItem = async (instanceId: string) => {
+        const item = items.find(i => i.instanceId === instanceId);
+        if (!item) return;
+
         setUsingItemId(instanceId);
-        await useItem(userId, instanceId);
+        const result = await useItem(userId, instanceId);
+
+        if (result.success && result.reward) {
+            onOpenChest(item.baseId, result.reward);
+        }
+
         await loadData(); // refresh
         setUsingItemId(null);
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} />
             <div className="bg-gray-900 border border-gray-700 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden relative z-10 animate-in zoom-in-95 duration-200">
                 {/* Header */}
                 <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-800/50">
@@ -138,6 +148,7 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose }) => {
                     </div>
                 </div>
             </div>
+            {/* InventoryModal content continues... */}
         </div>
     );
 };

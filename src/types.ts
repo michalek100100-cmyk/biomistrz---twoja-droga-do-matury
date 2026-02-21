@@ -49,7 +49,8 @@ export interface BaseItem {
   name: string;
   description: string;
   icon: string; // emoji e.g. 🧶, 🥕
-  type: 'xp_multiplier' | 'elo_multiplier' | 'other';
+  type: 'xp_multiplier' | 'elo_multiplier' | 'boss_damage_multiplier' | 'chest' | 'other';
+  price?: number; // Price in gems (kasztany)
 }
 
 export interface InventoryItem {
@@ -61,7 +62,7 @@ export interface InventoryItem {
 
 export interface ActiveBuff {
   id: string;
-  type: 'xp_multiplier' | 'elo_multiplier';
+  type: 'xp_multiplier' | 'elo_multiplier' | 'boss_damage_multiplier';
   multiplier: number;
   expiresAt: number; // timestamp
   sourceItemName: string;
@@ -320,8 +321,8 @@ export interface TradeOffer {
   senderId: string; // User ID
   senderClanId: string;
   recipientId?: string; // If direct trade, else open to clan/alliance
-  offer: { gems: number };
-  request: { items: string[] }; // or other resources
+  offer: { items: string[] }; // ITEMS being sold
+  request: { gems: number }; // PRICE in gems
   status: 'open' | 'completed' | 'cancelled';
   createdAt: number;
 }

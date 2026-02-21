@@ -1,7 +1,7 @@
 import { db } from '../components/firebaseConfig';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { UserStats, ItemRarity } from '../types';
-import { grantItem } from './inventoryService';
+import { UserStats, ItemRarity, InventoryItem } from '../types';
+import { grantItemToArray } from './inventoryService';
 import { xpToLevel } from './rankingService';
 
 export const REWARD_MILESTONE_INTERVAL = 3;
@@ -77,13 +77,16 @@ export const claimLevelReward = async (userId: string, targetLevel: number): Pro
         const randomItem = itemsToPool[Math.floor(Math.random() * itemsToPool.length)];
         const rolledRarity = rollRandomRarity();
 
-        // Przyznanie przedmiotu uzywajac istniejacego serwisu
-        const grantRes = await grantItem(userId, randomItem, rolledRarity, 1);
-        if (!grantRes.success) throw new Error(grantRes.error);
+        // 5. Przyznanie przedmiotu i zapisanie odbioru (ATOMICZNIE)
+        const currentInventory: InventoryItem[] = data.inventory || [];
+        const updatedInventory = grantItemToArray(currentInventory, randomItem, rolledRarity, 1);
 
-        // 5. Zapisanie odbioru
         claimed.push(targetLevel);
-        await updateDoc(userRef, { claimedLevelRewards: claimed });
+
+        await updateDoc(userRef, {
+            inventory: updatedInventory,
+            claimedLevelRewards: claimed
+        });
 
         return {
             success: true,

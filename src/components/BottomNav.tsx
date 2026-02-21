@@ -1,7 +1,7 @@
 // src/components/BottomNav.tsx
 // Główna nawigacja aplikacji - 5 zakładek
 import React from 'react';
-import { Home, Swords, BookOpen, Trophy, User, Shield } from 'lucide-react';
+import { Home, Swords, BookOpen, Shield } from 'lucide-react';
 
 interface BottomNavProps {
     activeTab: string;
@@ -23,10 +23,9 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, setActiveTab, reviewCo
     const navItems: NavItem[] = [
         { id: 'home', label: 'Start', icon: Home, color: 'text-white/60', activeColor: 'text-white' },
         { id: 'multiplayer', label: 'Arena', icon: Swords, color: 'text-white/60', activeColor: 'text-white' },
+
         { id: 'clan', label: 'Klan', icon: Shield, color: 'text-white/60', activeColor: 'text-white' },
         { id: 'practice', label: 'Powtórki', icon: BookOpen, color: 'text-white/60', activeColor: 'text-white' },
-        { id: 'leaderboard', label: 'Ranking', icon: Trophy, color: 'text-white/60', activeColor: 'text-white' },
-        { id: 'profile', label: 'Profil', icon: User, color: 'text-white/60', activeColor: 'text-white' },
     ];
 
     return (

@@ -23,6 +23,10 @@ import LobbyScreen from './components/LobbyScreen';
 import MultiplayerGameScreen from './components/MultiplayerGameScreen';
 import CharadesGameScreen from './components/CharadesGameScreen';
 import ClanPanel from './components/ClanPanel';
+import ShopSection from './components/ShopSection';
+import InventoryModal from './components/InventoryModal';
+import LevelRewardModal from './components/LevelRewardModal';
+import ChestOpeningModal from './components/ChestOpeningModal';
 
 import CalendarSection from './components/CalendarSection';
 import AddToCalendarPrompt from './components/AddToCalendarPrompt';
@@ -38,10 +42,12 @@ import ReleaseNotesPopup from './components/ReleaseNotesPopup';
 import UpdateRequiredScreen from './components/UpdateRequiredScreen';
 import { subscribeToIncomingInvites, GameInvite } from './services/gameInviteService';
 import { checkForUpdate, UpdateStatus } from './services/versionService';
-import { initializeAdMob, showRewardedAd } from './services/adService';
+import { initializeAdMob } from './services/adService';
+import { getUnclaimedMilestones } from './services/levelRewardService';
+import { xpToLevel } from './services/rankingService';
 
 // --- TYPY I SERWISY ---
-import { UserStats, Unit, Topic } from './types';
+import { UserStats, Unit, Topic, ItemRarity } from './types';
 import { calculateNextReview, isReviewDue } from './services/srsService';
 import { showInstantNotification, requestWebNotificationPermission } from './services/notificationService';
 import { checkAchievements } from './services/achievementService';
@@ -138,6 +144,10 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('biomistrz_saved_questions');
     return saved ? JSON.parse(saved) : [];
   });
+
+  const [showInventory, setShowInventory] = useState(false);
+  const [showLevelRewards, setShowLevelRewards] = useState(false);
+  const [openingChest, setOpeningChest] = useState<{ chestId: string; reward: { baseId: string; rarity: ItemRarity } } | null>(null);
 
   const toggleSavedQuestion = (questionId: string) => {
     setSavedQuestions(prev => {
@@ -282,13 +292,13 @@ const App: React.FC = () => {
         if (dueTopics.length === 1) {
           showInstantNotification(
             '📚 Czas na powtórkę!',
-            `Powtórz "${dueTopics[0].title}" a zapamiętasz 500% lepiej!!`,
+            `Powtórz "${dueTopics[0].title}" a zapamiętasz 500 % lepiej!!`,
             'srs_reminder'
           );
         } else {
           showInstantNotification(
             '📚 Czas na powtórki!',
-            `Masz ${dueTopics.length} tematów do powtórzenia. Zrób to teraz, a zapamiętasz 500% lepiej!!`,
+            `Masz ${dueTopics.length} tematów do powtórzenia.Zrób to teraz, a zapamiętasz 500 % lepiej!!`,
             'srs_reminder'
           );
         }
@@ -362,7 +372,7 @@ const App: React.FC = () => {
               if (newlyUnlocked.length > 0) {
                 setTimeout(() => {
                   newlyUnlocked.forEach(ach => {
-                    showNotification(`Odblokowano osiągnięcie: ${ach.name}! 🎉`, 'success');
+                    showNotification(`Odblokowano osiągnięcie: ${ach.name} ! 🎉`, 'success');
                   });
                 }, 2000);
               }
@@ -522,7 +532,7 @@ const App: React.FC = () => {
           inCalendar: t.inCalendar
         };
       }));
-      const progressKey = `biomistrz_progress_${subject}`;
+      const progressKey = `biomistrz_progress_${subject} `;
       localStorage.setItem(progressKey, JSON.stringify(progressToSave));
     }
   }, [units, subject]);
@@ -576,7 +586,7 @@ const App: React.FC = () => {
       if (newlyUnlocked.length > 0) {
         setStats(newStats);
         newlyUnlocked.forEach(ach => {
-          showNotification(`Odblokowano osiągnięcie: ${ach.name}! 🎉`, 'success');
+          showNotification(`Odblokowano osiągnięcie: ${ach.name} ! 🎉`, 'success');
         });
       }
     }
@@ -602,7 +612,7 @@ const App: React.FC = () => {
       gems: (prev.gems || 0) + gems,
       claimedEloRewards: [...(prev.claimedEloRewards || []), milestone]
     }));
-    showNotification(`+${gems} 🌰 kasztanów za ${milestone} ELO!`, 'success');
+    showNotification(`+ ${gems} 🌰 kasztanów za ${milestone} ELO!`, 'success');
   };
 
   return (
@@ -741,7 +751,7 @@ const App: React.FC = () => {
             setIncomingInvite(null);
             setCurrentLobbyId(lobbyId);
             setShowMultiplayer(true);
-            showNotification(`Dołączono do gry z ${incomingInvite.fromUserName}!`, 'success');
+            showNotification(`Dołączono do gry z ${incomingInvite.fromUserName} !`, 'success');
           }}
           onClose={() => setIncomingInvite(null)}
         />
@@ -759,7 +769,12 @@ const App: React.FC = () => {
         <DesktopSidebar activeTab={activeTab} setActiveTab={handleTabChange} reviewCount={dueReviews.length} />
 
         <main className="flex-1 flex flex-col md:max-w-6xl md:mx-auto w-full pb-20 md:pb-0 relative">
-          <TopBar stats={stats} userId={user?.uid} onNavigate={handleTabChange} />
+          <TopBar
+            stats={stats}
+            userId={user?.uid}
+            onNavigate={handleTabChange}
+            onOpenInventory={() => setShowInventory(true)}
+          />
 
           <div key={contentRefreshKey} className="p-4 md:p-8 flex-1">
             <AnimatePresence mode="wait">
@@ -770,22 +785,7 @@ const App: React.FC = () => {
                     reviewCount={dueReviews.length}
                     onNavigate={handleTabChange}
                     onOpenMultiplayer={() => setShowMultiplayer(true)}
-                    userId={user?.uid}
-                    onClaimSuccess={(level) => {
-                      setStats(prev => ({
-                        ...prev,
-                        claimedLevelRewards: [...(prev.claimedLevelRewards || []), level]
-                      }));
-                    }}
-                    onWatchAd={() => {
-                      showRewardedAd(() => {
-                        setStats(prev => ({
-                          ...prev,
-                          gems: (prev.gems || 0) + 25
-                        }));
-                        showNotification(`+25 🌰 kasztanów za obejrzenie reklamy!`, 'success');
-                      });
-                    }}
+                    onOpenLevelRewards={() => setShowLevelRewards(true)}
                   />
                 </div>
               )}
@@ -797,19 +797,19 @@ const App: React.FC = () => {
                       <div className="flex items-center justify-center gap-3 mb-6">
                         <button
                           onClick={() => setSubject('biology')}
-                          className={`flex-1 py-3 px-6 rounded-2xl font-black text-sm transition-all ${subject === 'biology'
+                          className={`flex - 1 py - 3 px - 6 rounded - 2xl font - black text - sm transition - all ${subject === 'biology'
                             ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg scale-105'
                             : 'bg-gray-200  text-gray-600  hover:bg-gray-300 '
-                            }`}
+                            } `}
                         >
                           🧬 Biologia
                         </button>
                         <button
                           onClick={() => setSubject('chemistry')}
-                          className={`flex-1 py-3 px-6 rounded-2xl font-black text-sm transition-all ${subject === 'chemistry'
+                          className={`flex - 1 py - 3 px - 6 rounded - 2xl font - black text - sm transition - all ${subject === 'chemistry'
                             ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg scale-105'
                             : 'bg-gray-200  text-gray-600  hover:bg-gray-300 '
-                            }`}
+                            } `}
                         >
                           ⚗️ Chemia
                         </button>
@@ -895,7 +895,7 @@ const App: React.FC = () => {
                   ) : (
                     <div className="space-y-8">
                       <button onClick={() => setSelectedUnit(null)} className="flex items-center gap-2 text-blue-600  font-black uppercase text-[10px] hover:translate-x-[-2px] transition-transform bg-white  px-5 py-2.5 rounded-full shadow-sm"><ChevronLeft className="w-4 h-4" /> Wróć do Mapy</button>
-                      <motion.div layoutId={`unit-header-${selectedUnit.id}`} className="bg-gray-800 rounded-[2.5rem] p-10 text-white border-b-[10px] border-blue-600 shadow-xl relative overflow-hidden">
+                      <motion.div layoutId={`unit - header - ${selectedUnit.id} `} className="bg-gray-800 rounded-[2.5rem] p-10 text-white border-b-[10px] border-blue-600 shadow-xl relative overflow-hidden">
                         <div className="flex items-center gap-6 relative z-10">
                           <span className="bg-white/10 p-5 rounded-[1.8rem] backdrop-blur-md text-6xl">{selectedUnit.icon}</span>
                           <div>
@@ -1030,7 +1030,7 @@ const App: React.FC = () => {
                   userAvatar={stats.avatar}
                   userGems={stats.gems}
                   userElo={stats.elo}
-                  onGemsSpent={(amount) => setStats(prev => ({ ...prev, gems: prev.gems - amount }))}
+                  onGemsSpent={(amount: number) => setStats(prev => ({ ...prev, gems: prev.gems - amount }))}
                 />
               )}
               {activeTab === 'friends' && user && (
@@ -1074,6 +1074,22 @@ const App: React.FC = () => {
                   units={units}
                   onStartQuiz={(topic) => {
                     setActiveQuizTopic(topic);
+                  }}
+                />
+              )}
+
+              {activeTab === 'shop' && user && (
+                <ShopSection
+                  userId={user.uid}
+                  userGems={stats.gems}
+                  onPurchaseSuccess={(amount: number) => {
+                    // Update stats immediately to reflect deducted gems
+                    setStats(prev => ({ ...prev, gems: Math.max(0, prev.gems - amount) }));
+
+                    // forceSync will ensure local and remote are consistent
+                    setTimeout(() => {
+                      window.dispatchEvent(new Event('force-sync'));
+                    }, 100);
                   }}
                 />
               )}
@@ -1124,7 +1140,7 @@ const App: React.FC = () => {
                 const { newStats, newlyUnlocked } = checkAchievements(updatedStats, { type: 'QUIZ_FINISHED', questionsAnswered: activeQuizTopic.questions.length });
                 if (newlyUnlocked.length > 0) {
                   setTimeout(() => newlyUnlocked.forEach(ach => {
-                    showNotification(`Odblokowano osiągnięcie: ${ach.name}! 🎉`, 'success');
+                    showNotification(`Odblokowano osiągnięcie: ${ach.name} ! 🎉`, 'success');
                   }), 1000);
                 }
                 return newStats;
@@ -1225,6 +1241,42 @@ const App: React.FC = () => {
         isVisible={notification.visible}
         onClose={() => setNotification(prev => ({ ...prev, visible: false }))}
       />
+
+      {/* Global Inventory Modal */}
+      {showInventory && user && (
+        <InventoryModal
+          userId={user.uid}
+          onClose={() => setShowInventory(false)}
+          onOpenChest={(chestId, reward) => setOpeningChest({ chestId, reward })}
+        />
+      )}
+
+      {/* Global Level Reward Modal */}
+      {showLevelRewards && user && (
+        <LevelRewardModal
+          userId={user.uid}
+          unclaimedLevels={getUnclaimedMilestones(xpToLevel(stats.xp), stats.claimedLevelRewards || [])}
+          onClose={() => setShowLevelRewards(false)}
+          onClaimSuccess={(level) => {
+            setStats(prev => ({
+              ...prev,
+              claimedLevelRewards: [...(prev.claimedLevelRewards || []), level]
+            }));
+          }}
+          onOpenChest={(chestId, reward) => setOpeningChest({ chestId, reward })}
+        />
+      )}
+
+      {/* 4. Chest Opening Animation Overlay */}
+      <AnimatePresence>
+        {openingChest && (
+          <ChestOpeningModal
+            chestId={openingChest.chestId}
+            reward={openingChest.reward}
+            onClose={() => setOpeningChest(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

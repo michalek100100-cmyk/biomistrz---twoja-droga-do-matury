@@ -358,20 +358,21 @@ const MultiplayerGameScreen: React.FC<MultiplayerGameScreenProps> = ({ lobbyId, 
       // Only the host simulates the bot
       const currentBotIndex = botPlayer.lastSyncIndex !== undefined ? botPlayer.lastSyncIndex : -1;
 
-      // If bot is behind current question (simulating real-time play)
-      // We trigger bot move for the *current* localIndex of the game 
-      // OR we can make the bot independent. 
-      // Let's make the bot answer the `localIndex` question.
-
       if (currentBotIndex < localIndex) {
         const botElo = botPlayer.botElo || 0;
-        const delay = getBotDelay(botElo);
+
+        // OPTIMIZATION: If user already answered, make bot answer faster (500-1000ms)
+        // Otherwise use natural ELO-based delay
+        const naturalDelay = getBotDelay(botElo);
+        const userHasAnswered = answerStatus !== 'idle';
+        const delay = userHasAnswered ? Math.min(800, naturalDelay) : naturalDelay;
 
         // Schedule bot answer
         const timerId = setTimeout(async () => {
           try {
+            // Re-check if bot still needs to answer (avoid race conditions)
             const isCorrect = shouldBotAnswerCorrectly(botElo);
-            const points = isCorrect ? 1000 + Math.floor(Math.random() * 200) : 0; // Natural numbers only
+            const points = isCorrect ? 1000 + Math.floor(Math.random() * 200) : 0;
 
             const newScore = (botPlayer.score || 0) + points;
 
@@ -394,7 +395,7 @@ const MultiplayerGameScreen: React.FC<MultiplayerGameScreenProps> = ({ lobbyId, 
         return () => clearTimeout(timerId);
       }
     }
-  }, [gameStarted, isFinished, localIndex, liveLeaderboard, isHost, userId, lobbyId, questions.length]);
+  }, [gameStarted, isFinished, localIndex, liveLeaderboard, isHost, userId, lobbyId, questions.length, answerStatus]);
 
   // --- 1v1 RANKING UPDATE ---
   useEffect(() => {

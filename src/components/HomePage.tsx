@@ -24,9 +24,7 @@ interface HomePageProps {
     reviewCount: number;
     onNavigate: (tab: string) => void;
     onOpenMultiplayer: () => void;
-    userId?: string;
-    onClaimSuccess?: (level: number) => void;
-    onWatchAd?: () => void;
+    onOpenLevelRewards?: () => void;
 }
 
 interface TileItem {
@@ -130,7 +128,7 @@ const StatsBackground: React.FC = () => {
     );
 };
 
-const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onOpenMultiplayer, userId, onClaimSuccess, onWatchAd }) => {
+const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onOpenMultiplayer, onOpenLevelRewards }) => {
     const tiles: TileItem[] = [
         {
             id: 'learn',
@@ -170,6 +168,7 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
             bgGradient: 'bg-transparent',
             size: 'medium'
         },
+
         {
             id: 'leaderboard',
             label: 'Ranking',
@@ -278,11 +277,12 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
                     <h1 className="text-4xl font-black text-green-900 stats-font break-words leading-tight px-6 tracking-tight drop-shadow-sm">
                         Witaj, {stats.name}!
                     </h1>
-                    {userId && onClaimSuccess && (
-                        <div className="px-8 mt-2">
-                            <LevelProgressBar stats={stats} userId={userId} onClaimSuccess={onClaimSuccess} />
-                        </div>
-                    )}
+                    <div className="px-8 mt-2">
+                        <LevelProgressBar
+                            stats={stats}
+                            onOpenRewards={() => onOpenLevelRewards?.()}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -342,20 +342,6 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
                         />
                     </div>
                 </div>
-
-                {/* Watch Ad Button Overlay (Small corner button) */}
-                {onWatchAd && (
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onWatchAd();
-                        }}
-                        className="absolute bottom-2 right-4 z-20 bg-white/20 hover:bg-white/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/30 text-[10px] font-black text-green-900 pointer-events-auto flex items-center gap-1 shadow-sm transition-all active:scale-95"
-                    >
-                        <span>📺 Bonus</span>
-                        <span className="text-orange-600">+25 🌰</span>
-                    </button>
-                )}
             </div>
 
             {/* Large Tiles - 2 columns */}
@@ -452,6 +438,7 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
                     </div>
                 </motion.div>
             )}
+
         </motion.div>
     );
 };

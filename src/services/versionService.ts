@@ -5,7 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../components/firebaseConfig';
 
 // Current app version - UPDATE THIS ON EACH RELEASE
-export const APP_VERSION = '4.1.0';
+export const APP_VERSION = '4.2.0';
 
 export interface VersionConfig {
     latestVersion: string;

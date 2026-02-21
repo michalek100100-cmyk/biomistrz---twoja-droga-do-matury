@@ -497,21 +497,16 @@ const LeaderboardSection = () => {
                                 🥈
                               </div>
                             )}
-                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-[120%] text-center px-1 z-10 flex flex-col items-center">
-                              {podiumUsers.second?.activeTitle && (
-                                <span className="text-[7px] font-black uppercase tracking-widest text-[#B08D57] bg-white/90 px-1 rounded-sm shadow-sm border border-[#B08D57]/30 mb-0.5 whitespace-nowrap">
-                                  {podiumUsers.second.activeTitle}
-                                </span>
-                              )}
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[140%] text-center px-1 z-10 flex flex-col items-center">
                               <p
-                                className="text-[10px] font-black text-gray-900 truncate w-full"
+                                className="text-[11px] font-black text-gray-900 truncate w-full"
                                 style={{ textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff' }}
                               >
                                 {podiumUsers.second?.name}
                               </p>
                             </div>
                           </div>
-                          <div className="absolute -bottom-8 text-center w-full">
+                          <div className="absolute -bottom-12 text-center w-full">
                             <p className="text-sm font-black text-gray-400">{podiumUsers.second?.elo}</p>
                           </div>
                         </div>
@@ -539,21 +534,16 @@ const LeaderboardSection = () => {
                                 🥇
                               </div>
                             )}
-                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-[120%] text-center px-1 z-10 flex flex-col items-center">
-                              {podiumUsers.first?.activeTitle && (
-                                <span className="text-[8px] font-black uppercase tracking-widest text-yellow-600 bg-white/95 px-1 rounded-sm shadow-sm border border-yellow-400 mb-0.5 whitespace-nowrap">
-                                  {podiumUsers.first.activeTitle}
-                                </span>
-                              )}
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[140%] text-center px-1 z-10 flex flex-col items-center">
                               <p
-                                className="text-[10px] md:text-xs font-black text-gray-900 truncate w-full"
+                                className="text-[11px] md:text-xs font-black text-gray-900 truncate w-full"
                                 style={{ textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff' }}
                               >
                                 {podiumUsers.first?.name}
                               </p>
                             </div>
                           </div>
-                          <div className="absolute -bottom-8 text-center w-full">
+                          <div className="absolute -bottom-12 text-center w-full">
                             <p className="text-sm font-black text-yellow-600">{podiumUsers.first?.elo}</p>
                           </div>
                         </div>
@@ -581,12 +571,7 @@ const LeaderboardSection = () => {
                                 🥉
                               </div>
                             )}
-                            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-[120%] text-center px-1 z-10 flex flex-col items-center">
-                              {podiumUsers.third?.activeTitle && (
-                                <span className="text-[7px] font-black uppercase tracking-widest text-orange-700 bg-white/90 px-1 rounded-sm shadow-sm border border-orange-700/30 mb-0.5 whitespace-nowrap">
-                                  {podiumUsers.third.activeTitle}
-                                </span>
-                              )}
+                            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[140%] text-center px-1 z-10 flex flex-col items-center">
                               <p
                                 className="text-[10px] font-black text-gray-900 truncate w-full"
                                 style={{ textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff' }}
@@ -595,7 +580,7 @@ const LeaderboardSection = () => {
                               </p>
                             </div>
                           </div>
-                          <div className="absolute -bottom-8 text-center w-full">
+                          <div className="absolute -bottom-12 text-center w-full">
                             <p className="text-sm font-black text-orange-600">{podiumUsers.third?.elo}</p>
                           </div>
                         </div>
@@ -677,7 +662,7 @@ const LeaderboardSection = () => {
 
                           <div className="flex-1 min-w-0">
                             {user.activeTitle && (
-                              <p className="text-[8px] font-black uppercase text-orange-200/50 mb-[-2px] tracking-widest">{user.activeTitle}</p>
+                              <p className="text-[9px] font-black uppercase text-orange-400 mb-0.5 tracking-widest bg-orange-400/10 w-fit px-2 rounded-full border border-orange-400/20">{user.activeTitle}</p>
                             )}
                             <p className="font-black text-orange-50 text-base truncate stats-font tracking-wide">
                               {user.name}

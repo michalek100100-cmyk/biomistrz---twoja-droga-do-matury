@@ -17,7 +17,10 @@ import {
 } from 'firebase/firestore';
 import { ref, push, onChildAdded, off } from 'firebase/database';
 import { db, rtdb } from '../components/firebaseConfig';
-import { Clan, ClanMember, ClanChatMessage } from '../types';
+import { Clan, ClanMember, ClanChatMessage, TradeOffer } from '../types';
+import { removeItem, adjustGems, grantItem, ITEMS_DB } from './inventoryService';
+
+const TRADES_COLLECTION = 'trade_offers';
 
 export const TEST_MODE = false; // <<< ZMIEŃ NA true ŻEBY WYŁĄCZYĆ WYMAGANIA
 
@@ -503,21 +506,25 @@ export const acceptAlliance = async (allianceId: string) => {
 // TRADING (HANDEL)
 // ==========================================
 
-const TRADES_COLLECTION = 'trade_offers';
-
-export const createTradeOffer = async (senderId: string, senderClanId: string, offerGems: number, requestItems: string[]) => {
+export const createTradeOffer = async (senderId: string, senderClanId: string, priceGems: number, itemNames: string[]) => {
     try {
+        const itemName = itemNames[0];
+        const itemBase = Object.values(ITEMS_DB).find(i => i.name === itemName);
+        if (!itemBase) return { success: false, error: 'Nie znaleziono przedmiotu.' };
+
+        // 1. Deduct item from sender
+        const removeRes = await removeItem(senderId, itemBase.id, 1);
+        if (!removeRes.success) return removeRes;
+
         const tradeId = `trade_${Date.now()}_${senderId}`;
         const ref = doc(db, TRADES_COLLECTION, tradeId);
-
-        // Deduct gems directly or verify. In real app, run as transaction.
 
         await setDoc(ref, {
             id: tradeId,
             senderId,
             senderClanId,
-            offer: { gems: offerGems },
-            request: { items: requestItems },
+            offer: { items: [itemName] },
+            request: { gems: priceGems },
             status: 'open',
             createdAt: Date.now()
         });
@@ -534,11 +541,27 @@ export const acceptTradeOffer = async (tradeId: string, recipientId: string) => 
         const snap = await getDoc(ref);
         if (!snap.exists()) return { success: false, error: 'Nie znaleziono oferty.' };
 
-        const data = snap.data();
+        const data = snap.data() as TradeOffer;
         if (data.status !== 'open') return { success: false, error: 'Oferta jest już nieaktualna.' };
+        if (data.senderId === recipientId) return { success: false, error: 'Nie możesz kupić własnej oferty!' };
 
-        // Real transaction would exchange items/gems between users here.
+        const price = data.request.gems;
+        const itemName = data.offer.items[0];
+        const itemBase = Object.values(ITEMS_DB).find(i => i.name === itemName);
 
+        if (!itemBase) return { success: false, error: 'Błąd danych przedmiotu.' };
+
+        // 1. Deduct gems from buyer
+        const buyerGemRes = await adjustGems(recipientId, -price);
+        if (!buyerGemRes.success) return buyerGemRes;
+
+        // 2. Grant gems to seller
+        await adjustGems(data.senderId, price);
+
+        // 3. Grant item to buyer
+        await grantItem(recipientId, itemBase.id, 'common', 1);
+
+        // 4. Mark as completed
         await updateDoc(ref, {
             status: 'completed',
             recipientId
@@ -547,5 +570,24 @@ export const acceptTradeOffer = async (tradeId: string, recipientId: string) => 
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
+    }
+};
+
+export const getOpenTradeOffers = async (): Promise<TradeOffer[]> => {
+    try {
+        const q = query(
+            collection(db, TRADES_COLLECTION),
+            where('status', '==', 'open'),
+            limit(50)
+        );
+        const snapshot = await getDocs(q);
+        console.log(`[Trade] Fetched ${snapshot.size} open offers`);
+        const offers = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as TradeOffer));
+
+        // Sort in memory to avoid complex indices
+        return offers.sort((a, b) => b.createdAt - a.createdAt);
+    } catch (error) {
+        console.error('Failed to get trade offers:', error);
+        return [];
     }
 };

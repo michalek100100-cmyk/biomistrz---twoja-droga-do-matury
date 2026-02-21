@@ -13,6 +13,7 @@ interface UserProfilePreviewProps {
         xp: number;
         bio?: string;
         likes?: number;
+        activeTitle?: string;
         elo: number;
         wins: number;
         losses: number;
@@ -116,9 +117,12 @@ const UserProfilePreview: React.FC<UserProfilePreviewProps> = ({ user, onClose, 
 
                     {/* Name & Bio */}
                     <div className="mt-4 space-y-2">
-                        <h2 className="text-2xl font-black text-stone-800  tracking-tight">
+                        <h2 className="text-2xl font-black text-stone-800 tracking-tight">
                             {user.name}
                         </h2>
+                        {user.activeTitle && (
+                            <p className="text-[10px] font-black uppercase text-orange-500 tracking-[0.2em] mb-2">{user.activeTitle}</p>
+                        )}
                         <div className="flex items-center justify-center gap-4 text-xs font-bold uppercase tracking-widest text-stone-400">
                             <span className="flex items-center gap-1">
                                 <Swords className="w-3 h-3 text-red-500" /> {user.elo} ELO

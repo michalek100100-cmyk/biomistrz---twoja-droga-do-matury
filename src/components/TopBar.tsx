@@ -4,18 +4,17 @@ import React, { useEffect, useState } from 'react';
 import { Flame, PackageOpen } from 'lucide-react';
 import { UserStats } from '../types';
 import { xpToLevel, getTierFromElo, getPlayerRanking, TierInfo, INITIAL_ELO } from '../services/rankingService';
-import InventoryModal from './InventoryModal';
 
 interface TopBarProps {
   stats: UserStats;
   userId?: string;
   onNavigate: (tab: string) => void;
+  onOpenInventory?: () => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ stats, userId, onNavigate }) => {
+const TopBar: React.FC<TopBarProps> = ({ stats, userId, onNavigate, onOpenInventory }) => {
   const [tierInfo, setTierInfo] = useState<TierInfo | null>(null);
   const [elo, setElo] = useState<number>(INITIAL_ELO);
-  const [showInventory, setShowInventory] = useState(false);
 
   const level = xpToLevel(stats.xp);
 
@@ -70,7 +69,7 @@ const TopBar: React.FC<TopBarProps> = ({ stats, userId, onNavigate }) => {
 
               {/* INVENTORY BUTTON */}
               <button
-                onClick={() => setShowInventory(true)}
+                onClick={() => onOpenInventory?.()}
                 className="p-1.5 md:p-2 bg-purple-500/10 hover:bg-purple-500/20 rounded-full transition-colors border border-purple-500/30 text-purple-600 shadow-sm"
               >
                 <PackageOpen className="w-5 h-5 md:w-6 md:h-6" />
@@ -90,44 +89,50 @@ const TopBar: React.FC<TopBarProps> = ({ stats, userId, onNavigate }) => {
           </button>
         )}
 
-        {/* RIGHT: Avatar + Level (klikalne → profil) */}
-        <button
-          onClick={() => onNavigate('profile')}
-          className="flex items-center gap-2 md:gap-4 hover:opacity-80 transition-opacity"
-        >
-          <div className="text-right hidden xs:block">
-            {stats.activeTitle && (
-              <p className="text-[9px] md:text-[11px] font-black text-purple-200 uppercase tracking-widest leading-none mb-0.5 max-w-[80px] md:max-w-[120px] truncate">
-                {stats.activeTitle}
+        {/* RIGHT: Gems + Avatar */}
+        <div className="flex items-center gap-3">
+          {/* GEMS COUNTER / SHOP BUTTON */}
+          <button
+            onClick={() => onNavigate('shop')}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 rounded-full border border-orange-500/30 transition-all active:scale-95 shadow-sm"
+          >
+            <span className="text-orange-600 font-black text-xs md:text-sm leading-none">{stats.gems}</span>
+            <img src="/Kasztany.png" alt="🌰" className="w-4 h-4 md:w-5 md:h-5 object-contain" />
+          </button>
+
+          {/* Avatar + Level (klikalne → profil) */}
+          <button
+            onClick={() => onNavigate('profile')}
+            className="flex items-center gap-2 md:gap-4 hover:opacity-80 transition-opacity"
+          >
+            <div className="text-right hidden xs:block">
+              {stats.activeTitle && (
+                <p className="text-[9px] md:text-[11px] font-black text-purple-200 uppercase tracking-widest leading-none mb-0.5 max-w-[80px] md:max-w-[120px] truncate">
+                  {stats.activeTitle}
+                </p>
+              )}
+              <p className="text-xs md:text-lg font-black text-white leading-none truncate max-w-[80px] md:max-w-[120px]">
+                {stats.name}
               </p>
-            )}
-            <p className="text-xs md:text-lg font-black text-white leading-none truncate max-w-[80px] md:max-w-[120px]">
-              {stats.name}
-            </p>
-            <p className="text-[10px] md:text-sm font-bold text-white/70 uppercase">
-              Lvl {level}
-            </p>
-          </div>
-
-          <div className="relative">
-            <img
-              src={stats.avatar || `https://picsum.photos/seed/${stats.name}/40/40`}
-              alt="Avatar"
-              className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-purple-500 object-cover bg-gray-100"
-            />
-            {/* Level badge */}
-            <div className="absolute -bottom-1 -right-1 md:-bottom-1.5 md:-right-1.5 bg-purple-500 text-white text-[10px] md:text-xs font-black w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center border-2 border-white">
-              {level}
+              <p className="text-[10px] md:text-sm font-bold text-white/70 uppercase">
+                Lvl {level}
+              </p>
             </div>
-          </div>
-        </button>
-      </div>
 
-      {
-        showInventory && userId && (
-          <InventoryModal userId={userId} onClose={() => setShowInventory(false)} />
-        )
-      }
+            <div className="relative">
+              <img
+                src={stats.avatar || `https://picsum.photos/seed/${stats.name}/40/40`}
+                alt="Avatar"
+                className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 md:border-[3px] border-purple-500 object-cover bg-gray-100"
+              />
+              {/* Level badge */}
+              <div className="absolute -bottom-1 -right-1 md:-bottom-1.5 md:-right-1.5 bg-purple-500 text-white text-[10px] md:text-xs font-black w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center border-2 border-white">
+                {level}
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
     </>
   );
 };

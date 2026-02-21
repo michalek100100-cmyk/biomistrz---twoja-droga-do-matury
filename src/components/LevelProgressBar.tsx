@@ -1,14 +1,12 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { UserStats } from '../types';
 import { getUnclaimedMilestones } from '../services/levelRewardService';
 import { xpToLevel, XP_PER_LEVEL } from '../services/rankingService';
-import LevelRewardModal from './LevelRewardModal';
 
 interface LevelProgressBarProps {
     stats: UserStats;
-    userId: string;
-    onClaimSuccess: (level: number) => void;
+    onOpenRewards: () => void;
 }
 
 const ChestSVG: React.FC<{ glowing: boolean }> = ({ glowing }) => (
@@ -27,8 +25,7 @@ const ChestSVG: React.FC<{ glowing: boolean }> = ({ glowing }) => (
     </svg>
 );
 
-const LevelProgressBar: React.FC<LevelProgressBarProps> = ({ stats, userId, onClaimSuccess }) => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
+const LevelProgressBar: React.FC<LevelProgressBarProps> = ({ stats, onOpenRewards }) => {
 
     const currentLevel = xpToLevel(stats.xp);
 
@@ -51,7 +48,7 @@ const LevelProgressBar: React.FC<LevelProgressBarProps> = ({ stats, userId, onCl
                 </div>
 
                 <div
-                    onClick={() => hasRewards && setIsModalOpen(true)}
+                    onClick={() => hasRewards && onOpenRewards()}
                     className="shrink-0 relative flex items-center justify-center transition-transform"
                 >
                     <ChestSVG glowing={hasRewards} />
@@ -63,14 +60,6 @@ const LevelProgressBar: React.FC<LevelProgressBarProps> = ({ stats, userId, onCl
                 </div>
             </div>
 
-            {isModalOpen && userId && hasRewards && (
-                <LevelRewardModal
-                    userId={userId}
-                    unclaimedLevels={unclaimed}
-                    onClose={() => setIsModalOpen(false)}
-                    onClaimSuccess={onClaimSuccess}
-                />
-            )}
         </>
     );
 };

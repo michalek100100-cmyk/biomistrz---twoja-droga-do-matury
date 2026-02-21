@@ -1,6 +1,41 @@
 {
-    "currentVersion": "4.1.0",
+    "currentVersion": "4.2.0",
     "releases": [
+        {
+            "version": "4.2.0",
+            "date": "2026-02-21",
+            "title": "Skrzynie, Nagrody i Kasztany! 🌰✨",
+            "changes": [
+                {
+                    "type": "new",
+                    "text": "System Otwierania Skrzynek! Zdobywaj Brązowe, Srebrne i Złote skrzynie, aby odkryć rzadkie łupy"
+                },
+                {
+                    "type": "new",
+                    "text": "System losowania zadań z arkuszy maturalnych!"
+                },
+                {
+                    "type": "new",
+                    "text": "ZAPRASZAM NA BIOMISTRZ.PL !!!!! Teraz możecie się uczyć do matury na komputerze!"
+                },
+                {
+                    "type": "improved",
+                    "text": "Wprowadziłem system przedmiotów, możesz zobaczyć co daje dany przedmiot sklepie ( kliknij na kasztany w prawym górnym )"
+                },
+                {
+                    "type": "new",
+                    "text": "level w menu. teraz co 3 levele masz skrzynkę!"
+                },
+                {
+                    "type": "improved",
+                    "text": "ulepszone systemy klanowe DUUUUŻO nowych funkcji"
+                },
+                {
+                    "type": "improved",
+                    "text": "sprawdźcie sami ;)"
+                }
+            ]
+        },
         {
             "version": "4.1.0",
             "date": "2026-02-20",

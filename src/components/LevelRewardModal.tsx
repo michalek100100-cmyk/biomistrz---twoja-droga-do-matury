@@ -9,11 +9,11 @@ interface LevelRewardModalProps {
     unclaimedLevels: number[];
     onClose: () => void;
     onClaimSuccess: (level: number) => void;
+    onOpenChest: (chestId: string, reward: { baseId: string, rarity: ItemRarity }) => void;
 }
 
-const LevelRewardModal: React.FC<LevelRewardModalProps> = ({ userId, unclaimedLevels, onClose, onClaimSuccess }) => {
+const LevelRewardModal: React.FC<LevelRewardModalProps> = ({ userId, unclaimedLevels, onClose, onClaimSuccess, onOpenChest }) => {
     const [loadingMap, setLoadingMap] = useState<Record<number, boolean>>({});
-    const [revealedItem, setRevealedItem] = useState<{ level: number, baseId: string, rarity: ItemRarity } | null>(null);
 
     const handleClaim = async (level: number) => {
         setLoadingMap(prev => ({ ...prev, [level]: true }));
@@ -21,7 +21,7 @@ const LevelRewardModal: React.FC<LevelRewardModalProps> = ({ userId, unclaimedLe
         setLoadingMap(prev => ({ ...prev, [level]: false }));
 
         if (res.success && res.itemGranted) {
-            setRevealedItem({ level, ...res.itemGranted });
+            onOpenChest('level_chest', { baseId: res.itemGranted.baseId, rarity: res.itemGranted.rarity });
             onClaimSuccess(level);
         } else {
             alert(res.error || 'Błąd odbierania nagrody.');
@@ -29,7 +29,7 @@ const LevelRewardModal: React.FC<LevelRewardModalProps> = ({ userId, unclaimedLe
     };
 
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[160] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onClose} />
 
             <div className="bg-gray-900 border border-purple-500/50 w-full max-w-sm rounded-[3rem] shadow-[0_0_50px_rgba(168,85,247,0.3)] overflow-hidden relative z-10 animate-in zoom-in-95 duration-300">
@@ -44,28 +44,6 @@ const LevelRewardModal: React.FC<LevelRewardModalProps> = ({ userId, unclaimedLe
 
                     <h2 className="text-2xl font-black text-white mb-2">Skrzynki Zapasów</h2>
                     <p className="text-sm font-bold text-gray-400 mb-6">Odbierz nagrody za zdobyte poziomy. Każda skrzynka zawiera losowy przedmiot!</p>
-
-                    {/* Revealed Item Overlay */}
-                    {revealedItem && (
-                        <div className="absolute inset-0 bg-gray-900/95 backdrop-blur-sm z-20 flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
-                            <h3 className="text-xl font-black text-white mb-6">Otwarto Skrzynkę ({revealedItem.level} lvl)!</h3>
-
-                            <div className={`p-8 rounded-[3rem] border-4 bg-gray-800 flex flex-col items-center justify-center w-full mb-6 ${getRarityColor(revealedItem.rarity)} shadow-2xl scale-110 animate-in zoom-in-50 duration-500`}>
-                                <div className="text-6xl mb-4 drop-shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-                                    {ITEMS_DB[revealedItem.baseId]?.icon}
-                                </div>
-                                <h4 className="font-black text-2xl text-white mb-1">{ITEMS_DB[revealedItem.baseId]?.name}</h4>
-                                <p className="font-black uppercase tracking-widest text-sm opacity-90">{getRarityLabel(revealedItem.rarity)}</p>
-                            </div>
-
-                            <button
-                                onClick={() => setRevealedItem(null)}
-                                className="w-full py-4 bg-purple-600 hover:bg-purple-500 rounded-2xl text-white font-black uppercase tracking-widest text-sm transition-transform active:scale-95"
-                            >
-                                Kontynuuj
-                            </button>
-                        </div>
-                    )}
 
                     {/* List of unlcaimed chests */}
                     <div className="space-y-3 max-h-[40vh] overflow-y-auto px-2 pb-4">
