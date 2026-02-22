@@ -13,7 +13,8 @@ import {
     Coffee,
     Sparkles,
     Calendar,
-    Shield
+    Shield,
+    Brain
 } from 'lucide-react';
 
 interface DesktopSidebarProps {
@@ -43,6 +44,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, setActiveTab
         { id: 'clan', label: 'Klan', icon: Shield, color: 'text-emerald-500' },
         { id: 'divider1', label: '', icon: Home, color: '', divider: true },
         { id: 'exams', label: 'Arkusze', icon: FileText, color: 'text-indigo-500' },
+        { id: 'studyhelp', label: 'Pomoc w nauce', icon: Brain, color: 'text-teal-500' },
         { id: 'survey', label: 'Ankieta', icon: MessageSquare, color: 'text-pink-500' },
         { id: 'divider2', label: '', icon: Home, color: '', divider: true },
         { id: 'profile', label: 'Profil', icon: User, color: 'text-purple-500' },

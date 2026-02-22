@@ -9,7 +9,8 @@ import {
     Coffee,
     HelpCircle,
     Sparkles,
-    ExternalLink
+    ExternalLink,
+    Brain
 } from 'lucide-react';
 
 interface MoreSectionProps {
@@ -36,6 +37,14 @@ const MoreSection: React.FC<MoreSectionProps> = ({ onNavigate }) => {
             icon: FileText,
             color: 'text-indigo-600',
             bgColor: 'bg-indigo-50 '
+        },
+        {
+            id: 'studyhelp',
+            label: 'Pomoc w nauce',
+            description: 'Pomodoro + szybkie czytanie RSVP',
+            icon: Brain,
+            color: 'text-teal-600',
+            bgColor: 'bg-teal-50 '
         },
         {
             id: 'survey',

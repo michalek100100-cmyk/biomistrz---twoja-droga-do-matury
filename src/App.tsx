@@ -9,6 +9,7 @@ import HomePage from './components/HomePage';
 import LessonMap from './components/LessonMap';
 import QuizSession from './components/QuizSession';
 import ExamSection from './components/ExamSection';
+import StudyHelpSection from './components/StudyHelpSection';
 import CreatorSection from './components/CreatorSection';
 import ProfileSection from './components/ProfileSection';
 import BugReportButton from './components/BugReportButton';
@@ -56,13 +57,14 @@ import { usePushNotifications } from './hooks/usePushNotifications';
 import { useMultiplayer, GameStatus } from './hooks/useMultiplayer';
 import { useDataLoader } from './hooks/useDataLoader';
 import { useCloudSync } from './hooks/useCloudSync';
+import { usePomodoroTimer } from './hooks/usePomodoroTimer';
 
 import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
 import { wasEmergencyRefresh, clearEmergencySave } from './services/emergencySaveService';
 import OfflineIndicator from './components/OfflineIndicator';
 
 // --- IKONY ---
-import { ChevronLeft, RefreshCw, Play, Users } from 'lucide-react';
+import { ChevronLeft, RefreshCw, Play, Users, Timer } from 'lucide-react';
 
 // --- FIREBASE ---
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -92,6 +94,9 @@ const INITIAL_STATS: UserStats = {
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [contentRefreshKey, setContentRefreshKey] = useState(0);
+
+  // Pomodoro timer – lives here so it persists across tab navigation
+  const [pomodoroState, pomodoroControls] = usePomodoroTimer();
 
   const [showAddToCalendarPrompt, setShowAddToCalendarPrompt] = useState<Topic | null>(null);
   const [showDailyReminder, setShowDailyReminder] = useState(false);
@@ -729,6 +734,40 @@ const App: React.FC = () => {
       <OfflineIndicator isOnline={isOnline} wasOffline={wasOffline} />
       <BugReportButton />
 
+      {/* Floating Pomodoro mini-widget – visible when timer is running on another tab */}
+      <AnimatePresence>
+        {pomodoroState.phase !== 'idle' && activeTab !== 'studyhelp' && (
+          <motion.button
+            initial={{ opacity: 0, y: 20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            onClick={() => handleTabChange('studyhelp')}
+            className={`fixed bottom-20 right-4 md:bottom-6 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-xl font-black text-sm text-white transition-all hover:scale-105 active:scale-95 ${pomodoroState.phase === 'work'
+                ? 'bg-gradient-to-r from-green-500 to-emerald-600 shadow-green-300'
+                : pomodoroState.phase === 'longBreak'
+                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500 shadow-blue-300'
+                  : 'bg-gradient-to-r from-orange-400 to-amber-500 shadow-orange-300'
+              }`}
+          >
+            {/* Pulse dot */}
+            {pomodoroState.running && (
+              <span className="flex h-2.5 w-2.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-2.5 w-2.5 rounded-full bg-white opacity-60" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+              </span>
+            )}
+            {!pomodoroState.running && <Timer className="w-4 h-4" />}
+            <span>
+              {Math.floor(pomodoroState.secondsLeft / 60).toString().padStart(2, '0')}
+              :{(pomodoroState.secondsLeft % 60).toString().padStart(2, '0')}
+            </span>
+            <span className="text-white/70 text-[10px] font-bold">
+              {pomodoroState.phase === 'work' ? 'Nauka' : pomodoroState.phase === 'longBreak' ? 'Przerwa' : 'Przerwa'}
+            </span>
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* Friend invite popups */}
       {pendingInvite && (
         <InvitePendingPopup
@@ -1018,6 +1057,12 @@ const App: React.FC = () => {
                     recordDailyQuestions(1);
                   }}
                 />
+              )}
+
+              {activeTab === 'studyhelp' && (
+                <motion.div key="studyhelp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <StudyHelpSection pomodoroState={pomodoroState} pomodoroControls={pomodoroControls} />
+                </motion.div>
               )}
 
               {activeTab === 'creator' && <CreatorSection onPublish={(t) => console.log("Wygenerowano:", t.title)} />}
