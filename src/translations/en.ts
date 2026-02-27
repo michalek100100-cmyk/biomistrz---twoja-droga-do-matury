@@ -835,5 +835,6 @@ export const en: TranslationSchema = {
         patroniteTitle: 'Patronite',
         patroniteUpcoming: 'Coming soon...',
         footerNote: 'Your support allows us to create the best app for high school students. THANK YOU! 🧬🧪',
+        adsNotReady: 'Ads are not ready yet. (Waiting for AdMob approval)',
     },
 };

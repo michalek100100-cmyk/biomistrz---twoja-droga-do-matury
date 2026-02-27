@@ -835,5 +835,6 @@ export const ch: TranslationSchema = {
         patroniteTitle: 'Patronite',
         patroniteUpcoming: '即将推出...',
         footerNote: '你的支持让我们能为高中生创造最好的应用。谢谢！🧬🧪',
+        adsNotReady: '广告尚未准备就绪。（正在等待 AdMob 审核）',
     },
 }

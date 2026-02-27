@@ -760,5 +760,6 @@ export interface TranslationSchema {
         patroniteTitle: string;
         patroniteUpcoming: string;
         footerNote: string;
+        adsNotReady: string;
     };
 }

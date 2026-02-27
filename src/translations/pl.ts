@@ -835,5 +835,6 @@ export const pl: TranslationSchema = {
         patroniteTitle: 'Patronite',
         patroniteUpcoming: 'Wkrótce dostępne...',
         footerNote: 'Twoje wsparcie pozwala nam tworzyć najlepszą aplikację dla maturzystów. DZIĘKUJEMY! 🧬🧪',
+        adsNotReady: 'Reklamy nie są jeszcze gotowe. (Czekamy na akceptację AdMob)',
     },
 }

@@ -835,5 +835,6 @@ export const de: TranslationSchema = {
         patroniteTitle: 'Patronite',
         patroniteUpcoming: 'Demnächst verfügbar...',
         footerNote: 'Deine Unterstützung ermöglicht es uns, die beste App für Gymnasiasten zu erstellen. DANKE! 🧬🧪',
+        adsNotReady: 'Werbung ist noch nicht bereit. (Warten auf AdMob-Genehmigung)',
     },
 }

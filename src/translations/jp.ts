@@ -835,5 +835,6 @@ export const jp: TranslationSchema = {
         patroniteTitle: 'Patronite',
         patroniteUpcoming: '近日公開...',
         footerNote: 'あなたのサポートにより、高校生のための最高のアプリを作ることができます。ありがとうございます！🧬🧪',
+        adsNotReady: '広告の準備がまだできていません。（AdMobの承認待ちです）',
     },
 }

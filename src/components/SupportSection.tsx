@@ -23,9 +23,11 @@ const SupportSection: React.FC<SupportSectionProps> = ({ stats, onUpdateStats })
     const { t } = useLanguage();
     const [isWatching, setIsWatching] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [adError, setAdError] = useState(false);
 
     const handleWatchAd = async () => {
         setIsWatching(true);
+        setAdError(false);
         try {
             await showRewardedAd(() => {
                 // Ad completed successfully
@@ -40,6 +42,8 @@ const SupportSection: React.FC<SupportSectionProps> = ({ stats, onUpdateStats })
             });
         } catch (error) {
             console.error('Error watching ad:', error);
+            setAdError(true);
+            setTimeout(() => setAdError(false), 5000);
         } finally {
             setIsWatching(false);
         }
@@ -85,6 +89,16 @@ const SupportSection: React.FC<SupportSectionProps> = ({ stats, onUpdateStats })
                 <p className="support-ad-disclaimer text-sm text-gray-600 mb-6 leading-relaxed">
                     {t.support.adDisclaimer}
                 </p>
+
+                {adError && (
+                    <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="support-ad-error text-xs text-rose-500 font-bold mb-4 text-center p-3 bg-rose-50 rounded-xl border border-rose-100"
+                    >
+                        {t.support.adsNotReady}
+                    </motion.p>
+                )}
 
                 <button
                     onClick={handleWatchAd}
