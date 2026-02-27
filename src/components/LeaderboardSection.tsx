@@ -11,6 +11,7 @@ import UserProfilePreview from './UserProfilePreview';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Fix leaflet default markers
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -34,6 +35,7 @@ interface RankingUser {
   bio?: string;
   likes?: number;
   activeTitle?: string;
+  country?: string;
 }
 
 interface CachedData {
@@ -110,6 +112,17 @@ const AVATAR_CONFIG = {
   x: 0,
   y: 0
 };
+
+const getFlagEmoji = (countryCode?: string) => {
+  if (!countryCode) return '';
+  const countries: Record<string, string> = {
+    'PL': '🇵🇱', 'US': '🇺🇸', 'GB': '🇬🇧', 'DE': '🇩🇪',
+    'ES': '🇪🇸', 'CZ': '🇨🇿', 'CN': '🇨🇳', 'JP': '🇯🇵',
+    'FR': '🇫🇷', 'IT': '🇮🇹', 'BR': '🇧🇷', 'UA': '🇺🇦',
+    'OTHER': '🌍'
+  };
+  return countries[countryCode] || '';
+};
 // -----------------------------------------------------
 
 const LeaderboardSection = () => {
@@ -117,6 +130,7 @@ const LeaderboardSection = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<RankingUser | null>(null);
+  const { t } = useLanguage();
 
   // Pagination states
   const [startIndex, setStartIndex] = useState<number>(1);
@@ -256,6 +270,7 @@ const LeaderboardSection = () => {
         let bio = '';
         let likes = 0;
         let activeTitle = '';
+        let country = '';
 
         try {
           const userDoc = await getDoc(doc(db, 'users', userId));
@@ -271,6 +286,7 @@ const LeaderboardSection = () => {
             // Sum up likes from both top-level and legacy 'stats.likes' to avoid reset
             likes = (userData.likes || 0) + (stats.likes || 0);
             activeTitle = stats.activeTitle || '';
+            country = stats.country || 'PL';
           }
         } catch (e) {
           console.warn(`Could not fetch user ${userId}`, e);
@@ -292,7 +308,8 @@ const LeaderboardSection = () => {
           level,
           bio,
           likes,
-          activeTitle
+          activeTitle,
+          country
         } as RankingUser;
       });
 
@@ -309,7 +326,7 @@ const LeaderboardSection = () => {
       setUsers(topUsers);
     } catch (error: any) {
       console.error("Błąd rankingu:", error);
-      setError('Nie udało się załadować rankingu. Spróbuj ponownie.');
+      setError(t.leaderboard.ranking.error);
     } finally {
       setLoading(false);
       setLoadingNavigation(false);
@@ -351,9 +368,9 @@ const LeaderboardSection = () => {
 
   // --- SEGMENT SWITCH UI ---
   const SEGMENTS: { key: Segment; label: string; icon: React.ReactNode }[] = [
-    { key: 'ranking', label: 'Ranking', icon: <Swords className="w-4 h-4" /> },
-    { key: 'clans', label: 'Klany', icon: <Shield className="w-4 h-4" /> },
-    { key: 'map', label: 'Mapa', icon: <MapPin className="w-4 h-4" /> },
+    { key: 'ranking', label: t.leaderboard.tabs.ranking, icon: <Swords className="w-4 h-4" /> },
+    { key: 'clans', label: t.leaderboard.tabs.clans, icon: <Shield className="w-4 h-4" /> },
+    { key: 'map', label: t.leaderboard.tabs.map, icon: <MapPin className="w-4 h-4" /> },
   ];
 
   return (
@@ -382,7 +399,7 @@ const LeaderboardSection = () => {
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400 space-y-4">
               <Swords className="w-12 h-12 animate-bounce text-red-400" />
-              <p className="font-bold animate-pulse">Ładowanie rankingu...</p>
+              <p className="font-bold animate-pulse">{t.leaderboard.ranking.loading}</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400 space-y-4">
@@ -393,7 +410,7 @@ const LeaderboardSection = () => {
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
-                Odśwież
+                {t.leaderboard.ranking.refresh}
               </button>
             </div>
           ) : (
@@ -403,7 +420,7 @@ const LeaderboardSection = () => {
                 <div className="flex items-center justify-between px-2">
                   <h2 className="text-2xl font-black text-gray-800  flex items-center gap-2">
                     <Swords className="w-8 h-8 text-red-500" />
-                    Ranking 1v1
+                    {t.leaderboard.ranking.title}
                   </h2>
                   <button
                     onClick={() => fetchRanking(true)}
@@ -428,7 +445,7 @@ const LeaderboardSection = () => {
                       }`}
                   >
                     <Trophy className="w-4 h-4" />
-                    Top Liderzy
+                    {t.leaderboard.ranking.topLeaders}
                   </button>
                   <button
                     onClick={() => {
@@ -441,7 +458,7 @@ const LeaderboardSection = () => {
                       }`}
                   >
                     <Target className="w-4 h-4" />
-                    Twoja Pozycja
+                    {t.leaderboard.ranking.yourPosition}
                   </button>
                 </div>
 
@@ -504,6 +521,9 @@ const LeaderboardSection = () => {
                               >
                                 {podiumUsers.second?.name}
                               </p>
+                              {podiumUsers.second?.country && (
+                                <span className="text-[10px] mt-0.5">{getFlagEmoji(podiumUsers.second.country)}</span>
+                              )}
                             </div>
                           </div>
                           <div className="absolute -bottom-12 text-center w-full">
@@ -541,6 +561,9 @@ const LeaderboardSection = () => {
                               >
                                 {podiumUsers.first?.name}
                               </p>
+                              {podiumUsers.first?.country && (
+                                <span className="text-[10px] md:text-xs mt-0.5">{getFlagEmoji(podiumUsers.first.country)}</span>
+                              )}
                             </div>
                           </div>
                           <div className="absolute -bottom-12 text-center w-full">
@@ -578,6 +601,9 @@ const LeaderboardSection = () => {
                               >
                                 {podiumUsers.third?.name}
                               </p>
+                              {podiumUsers.third?.country && (
+                                <span className="text-[9px] mt-0.5">{getFlagEmoji(podiumUsers.third.country)}</span>
+                              )}
                             </div>
                           </div>
                           <div className="absolute -bottom-12 text-center w-full">
@@ -610,7 +636,7 @@ const LeaderboardSection = () => {
                           textShadow: '2px 2px 8px rgba(0, 0, 0, 0.8)'
                         }}
                       >
-                        Podium
+                        {t.leaderboard.ranking.podium}
                       </h3>
                     </div>
                   </div>
@@ -664,8 +690,9 @@ const LeaderboardSection = () => {
                             {user.activeTitle && (
                               <p className="text-[9px] font-black uppercase text-orange-400 mb-0.5 tracking-widest bg-orange-400/10 w-fit px-2 rounded-full border border-orange-400/20">{user.activeTitle}</p>
                             )}
-                            <p className="font-black text-orange-50 text-base truncate stats-font tracking-wide">
+                            <p className="font-black text-orange-50 text-base truncate stats-font tracking-wide flex items-center gap-2">
                               {user.name}
+                              {user.country && <span>{getFlagEmoji(user.country)}</span>}
                             </p>
                             <div className="flex items-center gap-3 text-xs font-bold text-orange-200/70 mt-0.5">
                               <span className="flex items-center gap-1">
@@ -690,7 +717,7 @@ const LeaderboardSection = () => {
                   {
                     users.length === 0 && (
                       <div className="text-center text-gray-400 py-10 font-medium">
-                        Jeszcze nikt nie rozegrał pojedynku w tej zakładce! ⚔️
+                        {t.leaderboard.ranking.empty}
                       </div>
                     )
                   }
@@ -705,11 +732,11 @@ const LeaderboardSection = () => {
                           className="flex items-center gap-2 px-4 py-3 bg-white  text-gray-700  font-black text-xs uppercase tracking-widest rounded-xl hover:bg-gray-100  transition-colors disabled:opacity-30 disabled:hover:bg-white  shadow-sm"
                         >
                           <ChevronLeft className="w-4 h-4" />
-                          <span className="hidden xs:inline">Poprzednia</span>
+                          <span className="hidden xs:inline">{t.leaderboard.ranking.prev}</span>
                         </button>
 
                         <div className="text-xs font-black text-gray-400 ">
-                          ZOBACZ WIĘCEJ
+                          {t.leaderboard.ranking.seeMore}
                         </div>
 
                         <button
@@ -717,7 +744,7 @@ const LeaderboardSection = () => {
                           disabled={!hasMore || loadingNavigation}
                           className="flex items-center gap-2 px-4 py-3 bg-white  text-gray-700  font-black text-xs uppercase tracking-widest rounded-xl hover:bg-gray-100  transition-colors disabled:opacity-30 disabled:hover:bg-white  shadow-sm"
                         >
-                          <span className="hidden xs:inline">Następna</span>
+                          <span className="hidden xs:inline">{t.leaderboard.ranking.next}</span>
                           <ChevronRight className="w-4 h-4" />
                         </button>
                       </div>
@@ -747,20 +774,20 @@ const LeaderboardSection = () => {
           <div className="text-center space-y-2 mb-4">
             <h2 className="text-2xl font-black text-gray-800  flex items-center justify-center gap-2">
               <Shield className="w-8 h-8 text-emerald-500" />
-              Ranking Klanów
+              {t.leaderboard.clans.title}
             </h2>
           </div>
 
           {loadingClans ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400 space-y-4">
               <Loader2 className="w-10 h-10 animate-spin text-emerald-400" />
-              <p className="font-bold animate-pulse">Ładowanie klanów...</p>
+              <p className="font-bold animate-pulse">{t.leaderboard.clans.loading}</p>
             </div>
           ) : clanRankings.length === 0 ? (
             <div className="text-center text-gray-500 py-16 space-y-2">
               <Shield className="w-16 h-16 mx-auto text-gray-600" />
-              <p className="font-bold text-lg">Brak klanów</p>
-              <p className="text-sm">Stwórz pierwszy klan w zakładce "Klan"!</p>
+              <p className="font-bold text-lg">{t.leaderboard.clans.empty}</p>
+              <p className="text-sm">{t.leaderboard.clans.emptyTip}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -784,7 +811,7 @@ const LeaderboardSection = () => {
                       </p>
                       <p className="text-xs text-gray-400">
                         <Users className="inline w-3 h-3 mr-1" />
-                        {clan.memberCount} członków • WR: {clan.averageWinrate}%
+                        {t.leaderboard.clans.memberCount.replace('$1', clan.memberCount.toString())} • {t.leaderboard.clans.winrate.replace('$1', clan.averageWinrate.toString())}
                       </p>
                     </div>
                   </div>
@@ -805,17 +832,17 @@ const LeaderboardSection = () => {
           <div className="text-center space-y-2 mb-4">
             <h2 className="text-2xl font-black text-gray-800  flex items-center justify-center gap-2">
               <MapPin className="w-8 h-8 text-blue-500" />
-              Mapa Klanów
+              {t.leaderboard.map.title}
             </h2>
             <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">
-              Kliknij pinezkę, żeby zobaczyć szczegóły
+              {t.leaderboard.map.subtitle}
             </p>
           </div>
 
           {loadingMap ? (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400 space-y-4">
               <Loader2 className="w-10 h-10 animate-spin text-blue-400" />
-              <p className="font-bold animate-pulse">Ładowanie mapy...</p>
+              <p className="font-bold animate-pulse">{t.leaderboard.map.loading}</p>
             </div>
           ) : (
             <div className="rounded-2xl overflow-hidden border border-gray-700" style={{ height: '400px' }}>
@@ -834,14 +861,14 @@ const LeaderboardSection = () => {
                           <p className="text-2xl mb-1">{clan.avatar}</p>
                           <p className="font-black text-base">{clan.name}</p>
                           <div className="text-xs text-gray-600 mt-1 space-y-0.5">
-                            <p><strong>{clan.memberCount}</strong> członków</p>
-                            <p>Łączne ELO: <strong>{clan.totalElo}</strong></p>
-                            <p>Śr. Winrate: <strong>{clan.averageWinrate}%</strong></p>
+                            <p><strong>{clan.memberCount}</strong> {t.leaderboard.map.memberCount}</p>
+                            <p>{t.leaderboard.map.totalElo}: <strong>{clan.totalElo}</strong></p>
+                            <p>{t.leaderboard.map.avgWinrate}: <strong>{clan.averageWinrate}%</strong></p>
                           </div>
                           {/* Member list */}
                           {clan.members && (
                             <div className="mt-2 pt-2 border-t border-gray-200 text-left">
-                              <p className="font-bold text-[10px] uppercase text-gray-400 mb-1">Członkowie</p>
+                              <p className="font-bold text-[10px] uppercase text-gray-400 mb-1">{t.leaderboard.map.members}</p>
                               {Object.values(clan.members).slice(0, 5).map(m => (
                                 <div key={m.uid} className="flex items-center gap-1 text-xs py-0.5">
                                   {m.role === 'leader' && <Crown className="w-3 h-3 text-yellow-500" />}
@@ -851,7 +878,7 @@ const LeaderboardSection = () => {
                               ))}
                               {Object.keys(clan.members).length > 5 && (
                                 <p className="text-[10px] text-gray-400 mt-1">
-                                  +{Object.keys(clan.members).length - 5} więcej
+                                  {t.leaderboard.map.moreMembers.replace('$1', (Object.keys(clan.members).length - 5).toString())}
                                 </p>
                               )}
                             </div>
@@ -867,8 +894,8 @@ const LeaderboardSection = () => {
 
           {clanLocations.length === 0 && !loadingMap && (
             <div className="text-center text-gray-500 py-6">
-              <p className="font-bold">Brak klanów z lokalizacją na mapie</p>
-              <p className="text-sm">Stwórz klan i wybierz lokalizację!</p>
+              <p className="font-bold">{t.leaderboard.map.empty}</p>
+              <p className="text-sm">{t.leaderboard.map.emptyTip}</p>
             </div>
           )}
         </>

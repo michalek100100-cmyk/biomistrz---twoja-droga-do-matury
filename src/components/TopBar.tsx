@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Flame, PackageOpen } from 'lucide-react';
 import { UserStats } from '../types';
 import { xpToLevel, getTierFromElo, getPlayerRanking, TierInfo, INITIAL_ELO } from '../services/rankingService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface TopBarProps {
   stats: UserStats;
@@ -13,6 +14,7 @@ interface TopBarProps {
 }
 
 const TopBar: React.FC<TopBarProps> = ({ stats, userId, onNavigate, onOpenInventory }) => {
+  const { t } = useLanguage();
   const [tierInfo, setTierInfo] = useState<TierInfo | null>(null);
   const [elo, setElo] = useState<number>(INITIAL_ELO);
 
@@ -97,7 +99,7 @@ const TopBar: React.FC<TopBarProps> = ({ stats, userId, onNavigate, onOpenInvent
             className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 hover:bg-orange-500/20 rounded-full border border-orange-500/30 transition-all active:scale-95 shadow-sm"
           >
             <span className="text-orange-600 font-black text-xs md:text-sm leading-none">{stats.gems}</span>
-            <img src="/Kasztany.png" alt="🌰" className="w-4 h-4 md:w-5 md:h-5 object-contain" />
+            <img src="/Kasztany.png" alt={t.topBar.chestnut} className="w-4 h-4 md:w-5 md:h-5 object-contain" />
           </button>
 
           {/* Avatar + Level (klikalne → profil) */}
@@ -115,7 +117,7 @@ const TopBar: React.FC<TopBarProps> = ({ stats, userId, onNavigate, onOpenInvent
                 {stats.name}
               </p>
               <p className="text-[10px] md:text-sm font-bold text-white/70 uppercase">
-                Lvl {level}
+                {t.topBar.level} {level}
               </p>
             </div>
 

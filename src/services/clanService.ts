@@ -45,22 +45,22 @@ export async function createClan(
 ): Promise<{ success: boolean; error?: string; clanId?: string }> {
     // Validation
     if (!TEST_MODE && userElo < 100) {
-        return { success: false, error: 'Potrzebujesz minimum 100 ELO, żeby stworzyć klan.' };
+        return { success: false, error: 'insufficient_elo' };
     }
     if (!TEST_MODE && userGems < 100) {
-        return { success: false, error: 'Potrzebujesz minimum 100 kasztanów, żeby stworzyć klan.' };
+        return { success: false, error: 'insufficient_gems' };
     }
     if (!clanData.name.trim() || clanData.name.trim().length < 3) {
-        return { success: false, error: 'Nazwa klanu musi mieć co najmniej 3 znaki.' };
+        return { success: false, error: 'name_short' };
     }
     if (clanData.name.trim().length > 24) {
-        return { success: false, error: 'Nazwa klanu może mieć maksymalnie 24 znaki.' };
+        return { success: false, error: 'name_long' };
     }
 
     // Check if user already in a clan
     const userDoc = await getDoc(doc(db, 'users', userId));
     if (userDoc.exists() && userDoc.data()?.clanId) {
-        return { success: false, error: 'Musisz opuścić obecny klan, żeby stworzyć nowy.' };
+        return { success: false, error: 'already_in_clan' };
     }
 
     try {
@@ -105,7 +105,7 @@ export async function createClan(
         return { success: true, clanId };
     } catch (error) {
         console.error('Failed to create clan:', error);
-        return { success: false, error: 'Nie udało się stworzyć klanu. Spróbuj ponownie.' };
+        return { success: false, error: 'createError' };
     }
 }
 
@@ -132,19 +132,19 @@ export async function joinClan(
         const clan = clanSnap.data() as Omit<Clan, 'id'>;
 
         if (!clan.isPublic) {
-            return { success: false, error: 'Ten klan jest prywatny.' };
+            return { success: false, error: 'private_clan' };
         }
         if (userElo < clan.minElo) {
-            return { success: false, error: `Potrzebujesz minimum ${clan.minElo} ELO, żeby dołączyć.` };
+            return { success: false, error: 'low_elo' };
         }
         if (clan.members[userId]) {
-            return { success: false, error: 'Już jesteś w tym klanie.' };
+            return { success: false, error: 'already_member' };
         }
 
         // Check if user is already in another clan
         const userDocSnap = await getDoc(doc(db, 'users', userId));
         if (userDocSnap.exists() && userDocSnap.data()?.clanId) {
-            return { success: false, error: 'Musisz opuścić obecny klan, żeby dołączyć do nowego.' };
+            return { success: false, error: 'already_in_clan' };
         }
 
         const newMember: ClanMember = {
@@ -181,7 +181,7 @@ export async function joinClan(
         return { success: true };
     } catch (error) {
         console.error('Failed to join clan:', error);
-        return { success: false, error: 'Nie udało się dołączyć do klanu.' };
+        return { success: false, error: 'joinError' };
     }
 }
 
@@ -204,13 +204,13 @@ export async function addFriendToClan(
 
         // Verify if friend already in this clan
         if (clan.members[friendUid]) {
-            return { success: false, error: 'Znajomy jest już w Twoim klanie.' };
+            return { success: false, error: 'friend_already_member' };
         }
 
         // Check if friend is in another clan
         const friendDocSnap = await getDoc(doc(db, 'users', friendUid));
         if (friendDocSnap.exists() && friendDocSnap.data()?.clanId) {
-            return { success: false, error: 'Ten znajomy należy już do innego klanu. Musi go najpierw opuścić.' };
+            return { success: false, error: 'friend_in_other_clan' };
         }
 
         // We need friend's current stats
@@ -257,7 +257,7 @@ export async function addFriendToClan(
         return { success: true };
     } catch (error) {
         console.error('Failed to add friend to clan:', error);
-        return { success: false, error: 'Nie udało się dodać znajomego do klanu.' };
+        return { success: false, error: 'inviteError' };
     }
 }
 
@@ -316,7 +316,7 @@ export async function leaveClan(
         return { success: true };
     } catch (error) {
         console.error('Failed to leave clan:', error);
-        return { success: false, error: 'Nie udało się opuścić klanu.' };
+        return { success: false, error: 'leaveError' };
     }
 }
 

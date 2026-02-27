@@ -46,6 +46,10 @@ const MultiplayerGameScreen: React.FC<MultiplayerGameScreenProps> = ({ lobbyId, 
   // --- BLOKADA PRZEJŚCIA ---
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Refs to avoid stale closure in timer callback
+  const selectedOptionRef = useRef<string | null>(null);
+  const lockedInTimeRef = useRef<number | null>(null);
+
   // --- STAN PRZERWY (INTERMISSION) ---
   const [isIntermission, setIsIntermission] = useState(false);
   const [intermissionPhase, setIntermissionPhase] = useState<'rank' | 'countdown'>('rank');
@@ -212,37 +216,48 @@ const MultiplayerGameScreen: React.FC<MultiplayerGameScreenProps> = ({ lobbyId, 
   const handleTimeUp = () => {
     if (isProcessing) return;
     if (timerRef.current) clearInterval(timerRef.current);
-
     setIsProcessing(true);
-    setAnswerStatus('wrong');
-    setCombo(0);
-    saveProgress(localIndex, localScore);
-    handlePostAnswerTransition();
-  };
 
-  const handleAnswer = (option: string) => {
-    if (isProcessing || answerStatus !== 'idle') return;
-    if (timerRef.current) clearInterval(timerRef.current);
+    // Read from refs to get the answer that was locked in during this question
+    const selected = selectedOptionRef.current;
+    const timeWhenSelected = lockedInTimeRef.current;
 
-    setIsProcessing(true);
-    setSelectedOption(option);
-    const isCorrect = option === currentQuestion.correctAnswer;
     let newScore = localScore;
 
-    if (isCorrect) {
-      setAnswerStatus('correct');
-      const speedBonus = Math.floor((timeLeft / timePerQuestion) * 500);
-      const points = 1000 + (combo * 50) + speedBonus;
-      newScore += points;
-      setLocalScore(newScore);
-      setCombo(prev => prev + 1);
+    if (selected) {
+      const isCorrect = selected === currentQuestion.correctAnswer;
+      if (isCorrect) {
+        // Points based on when they SELECTED, not when the timer ended
+        const speedBonus = timeWhenSelected !== null
+          ? Math.floor((timeWhenSelected / timePerQuestion) * 500)
+          : 0;
+        const points = 1000 + (combo * 50) + speedBonus;
+        newScore += points;
+        setLocalScore(newScore);
+        setCombo(prev => prev + 1);
+        setAnswerStatus('correct');
+      } else {
+        setCombo(0);
+        setAnswerStatus('wrong');
+      }
     } else {
-      setAnswerStatus('wrong');
+      // No answer selected — timeout, treat as wrong
       setCombo(0);
+      setAnswerStatus('wrong');
     }
 
     saveProgress(localIndex, newScore);
     handlePostAnswerTransition();
+  };
+
+  const handleAnswer = (option: string) => {
+    // Only allow selecting before the timer ends and before a selection is already locked in
+    if (isProcessing || selectedOptionRef.current !== null || answerStatus !== 'idle') return;
+
+    // Lock in the selection — timer keeps running until it hits 0
+    selectedOptionRef.current = option;
+    lockedInTimeRef.current = timeLeft;
+    setSelectedOption(option);
   };
 
   const handlePostAnswerTransition = () => {
@@ -280,6 +295,9 @@ const MultiplayerGameScreen: React.FC<MultiplayerGameScreenProps> = ({ lobbyId, 
   };
 
   const goToNextQuestion = () => {
+    // Reset refs for the new question
+    selectedOptionRef.current = null;
+    lockedInTimeRef.current = null;
     setAnswerStatus('idle');
     setSelectedOption(null);
     setLocalIndex(prev => prev + 1);
@@ -701,12 +719,14 @@ const MultiplayerGameScreen: React.FC<MultiplayerGameScreenProps> = ({ lobbyId, 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {shuffledOptions.map((option, idx) => {
+            // Three visual states:
+            // 1. idle + no selection: neutral (clickable)
+            // 2. idle + selection locked in: selected=blue, others dimmed (timer still running)
+            // 3. answerStatus revealed (timer ended): green/red
             let btnClass = "bg-white/10 hover:bg-white/20 border-white/20";
 
-            // LOGIKA KOLOROWANIA PRZYCISKÓW:
-            // Jeśli użytkownik już odpowiedział, pokazujemy kolory.
-            // Jeśli nie odpowiedział (stan 'idle'), pokazujemy neutralne.
             if (answerStatus !== 'idle') {
+              // Timer ended — reveal result
               if (option === currentQuestion.correctAnswer) {
                 btnClass = "bg-green-500 text-white border-green-400 shadow-[0_0_30px_rgba(34,197,94,0.6)] scale-105";
               } else if (option === selectedOption) {
@@ -714,18 +734,25 @@ const MultiplayerGameScreen: React.FC<MultiplayerGameScreenProps> = ({ lobbyId, 
               } else {
                 btnClass = "bg-black/20 text-gray-400 border-transparent opacity-30 blur-[1px]";
               }
+            } else if (selectedOption !== null) {
+              // Answer locked in, timer still running
+              if (option === selectedOption) {
+                btnClass = "bg-blue-500/70 text-white border-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.5)] scale-[1.02]";
+              } else {
+                btnClass = "bg-black/20 text-gray-400 border-transparent opacity-40";
+              }
             }
 
             return (
               <motion.button
                 key={`${currentQuestion?.id}-${idx}`}
-                whileTap={answerStatus === 'idle' ? { scale: 0.95 } : {}}
-                disabled={answerStatus !== 'idle'} // Blokujemy klikanie po odpowiedzi
+                whileTap={answerStatus === 'idle' && selectedOption === null ? { scale: 0.95 } : {}}
+                disabled={selectedOption !== null || isProcessing}
                 onClick={() => handleAnswer(option)}
                 className={`p-6 rounded-2xl border-2 font-bold text-lg text-left transition-all duration-300 relative overflow-hidden flex justify-between items-center backdrop-blur-sm scientific-font ${btnClass}`}
               >
                 <span className="z-10 relative">{option}</span>
-                {/* Ikona sukcesu/porażki */}
+                {/* Ikona sukcesu/porażki — only shown after timer ends */}
                 {answerStatus !== 'idle' && option === currentQuestion.correctAnswer && (
                   <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
                     <CheckCircle2 className="w-6 h-6 text-white" />
@@ -734,6 +761,12 @@ const MultiplayerGameScreen: React.FC<MultiplayerGameScreenProps> = ({ lobbyId, 
                 {answerStatus !== 'idle' && option === selectedOption && option !== currentQuestion.correctAnswer && (
                   <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
                     <XCircle className="w-6 h-6 text-white" />
+                  </motion.div>
+                )}
+                {/* Lock icon when answer is selected but timer still running */}
+                {answerStatus === 'idle' && option === selectedOption && (
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-blue-200 text-sm font-black">
+                    ✓
                   </motion.div>
                 )}
               </motion.button>

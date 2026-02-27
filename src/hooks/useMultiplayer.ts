@@ -1,5 +1,6 @@
 // src/hooks/useMultiplayer.ts
 import { useState, useCallback } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { doc, collection, addDoc, getDocs, updateDoc, deleteDoc, query, where, serverTimestamp, getDoc } from 'firebase/firestore';
 import { ref, set, get, remove, onDisconnect, serverTimestamp as rtdbTimestamp } from 'firebase/database';
 import { db, rtdb } from '../components/firebaseConfig';
@@ -32,8 +33,9 @@ interface UseMultiplayerReturn {
     multiplayerTimePerQuestion: number;
     setMultiplayerTimePerQuestion: (time: number) => void;
     generateBattleQuestions: () => Question[];
+    generateBattleQuestionIds: () => number[];
     handleFind1v1Match: () => Promise<void>;
-    handleCreateLobby: () => Promise<void>;
+    handleCreateLobby: (type?: 'group' | 'charades') => Promise<void>;
     handleJoinLobby: (pin: string, nick: string) => Promise<void>;
     handleHostExit: (lobbyId: string) => void;
     handleStartCharadesGame: (lobbyId: string, duration?: number, rounds?: number) => Promise<void>;
@@ -54,6 +56,8 @@ export function useMultiplayer({
     const [multiplayerQuestions, setMultiplayerQuestions] = useState<Question[]>([]);
     const [multiplayerTimePerQuestion, setMultiplayerTimePerQuestion] = useState(15);
 
+    const { t } = useLanguage();
+
     // Generate battle questions from random topics
     const generateBattleQuestions = useCallback(() => {
         const shuffledUnits = [...units].sort(() => 0.5 - Math.random());
@@ -73,10 +77,28 @@ export function useMultiplayer({
         return battleQuestions;
     }, [units]);
 
+    // Generate only question IDs for cross-language 1v1 battles
+    const generateBattleQuestionIds = useCallback((): number[] => {
+        const shuffledUnits = [...units].sort(() => 0.5 - Math.random());
+        const selectedUnits = shuffledUnits.slice(0, 4);
+        const ids: number[] = [];
+
+        selectedUnits.forEach(unit => {
+            const randomTopic = unit.topics[Math.floor(Math.random() * unit.topics.length)];
+            const shuffledQuestions = [...randomTopic.questions].sort(() => 0.5 - Math.random());
+            shuffledQuestions.slice(0, 3).forEach(q => {
+                const numId = typeof q.id === 'number' ? q.id : parseFloat(q.id as any);
+                if (!isNaN(numId)) ids.push(numId);
+            });
+        });
+
+        return ids;
+    }, [units]);
+
     // Find 1v1 match (Atomic matching with RTDB)
     const handleFind1v1Match = useCallback(async () => {
         if (!user) {
-            showNotification("Musisz być zalogowany!", 'error');
+            showNotification(t.multiplayer.errors.loginRequired, 'error');
             return;
         }
 
@@ -99,7 +121,7 @@ export function useMultiplayer({
                 await remove(ref(rtdb, `matchmaking/1v1/queue/${opponentUid}`));
 
                 const gameId = `game_${opponentUid}_${user.uid}_${Date.now()}`;
-                const questions = generateBattleQuestions();
+                const questionIds = generateBattleQuestionIds();
 
                 const gameData = {
                     type: '1v1',
@@ -134,7 +156,7 @@ export function useMultiplayer({
                     await updateDoc(lobbyRef, {
                         status: 'GAME',
                         rtdbGameId: gameId,
-                        gameQuestions: questions,
+                        gameQuestionIds: questionIds, // Only IDs — each player resolves in their language
                         timePerQuestion: 12,
                         [`players.${user.uid}`]: {
                             uid: user.uid,
@@ -151,7 +173,7 @@ export function useMultiplayer({
                         type: '1v1',
                         status: 'GAME',
                         rtdbGameId: gameId,
-                        gameQuestions: questions,
+                        gameQuestionIds: questionIds, // Only IDs — each player resolves in their language
                         timePerQuestion: 12,
                         players: gameData.players,
                         createdAt: serverTimestamp()
@@ -198,13 +220,13 @@ export function useMultiplayer({
 
         } catch (error) {
             console.error(error);
-            showNotification("Błąd łączenia z Realtime DB.", 'error');
+            showNotification(t.multiplayer.errors.rtdbError, 'error');
         }
-    }, [user, stats, generateBattleQuestions, showNotification]);
+    }, [user, stats, generateBattleQuestions, showNotification, t]);
 
     const handleCreateLobby = useCallback(async (type: 'group' | 'charades' = 'group') => {
         if (!user) {
-            showNotification("Musisz być zalogowany!", 'error');
+            showNotification(t.multiplayer.errors.loginRequired, 'error');
             return;
         }
 
@@ -236,13 +258,13 @@ export function useMultiplayer({
             setCurrentLobbyId(docRef.id);
             setIsHost(true);
             setLobbyStatus('LOBBY');
-            showNotification(`Pokój utworzony! Kod PIN: ${pin}`, 'success');
+            showNotification(t.multiplayer.notifications.roomCreated.replace('$1', pin), 'success');
 
         } catch (error: any) {
             console.error(error);
-            showNotification("Nie udało się utworzyć pokoju.", 'error');
+            showNotification(t.multiplayer.errors.createError, 'error');
         }
-    }, [user, stats, showNotification]);
+    }, [user, stats, showNotification, t]);
 
     const handleStartCharadesGame = useCallback(async (lobbyId: string, duration: number = 60, rounds: number = 3) => {
         if (!user) return;
@@ -303,7 +325,7 @@ export function useMultiplayer({
             const querySnapshot = await getDocs(q);
 
             if (querySnapshot.empty) {
-                showNotification("Błędny kod PIN.", 'error');
+                showNotification(t.multiplayer.errors.joinErrorPin, 'error');
                 return;
             }
 
@@ -312,7 +334,7 @@ export function useMultiplayer({
             const lobbyData = lobbyDoc.data();
 
             if (lobbyData.status !== 'LOBBY') {
-                showNotification("Gra już trwa!", 'error');
+                showNotification(t.multiplayer.errors.joinErrorStarted, 'error');
                 return;
             }
 
@@ -332,10 +354,10 @@ export function useMultiplayer({
             setCurrentLobbyId(lobbyId);
             setIsHost(false);
             setLobbyStatus('LOBBY');
-            showNotification("Dołączono pomyślnie!", 'success');
+            showNotification(t.multiplayer.notifications.roomJoined, 'success');
 
         } catch (error: any) {
-            showNotification("Wystąpił błąd podczas dołączania.", 'error');
+            showNotification(t.multiplayer.errors.joinErrorGeneric, 'error');
         }
     }, [user, stats, showNotification]);
 
@@ -344,7 +366,7 @@ export function useMultiplayer({
         setCurrentLobbyId(null);
         setShowMultiplayer(false);
         setLobbyStatus(null);
-        showNotification("Lobby zostanie zamknięte za 10 sekund.", 'info');
+        showNotification(t.multiplayer.notifications.lobbyClosing, 'info');
 
         setTimeout(async () => {
             try {
@@ -359,11 +381,11 @@ export function useMultiplayer({
         try {
             const lobbyRef = doc(db, 'lobbies', lobbyId);
             const botProfile = generateBotProfile(stats.elo || 0);
-            const questions = generateBattleQuestions();
+            const questionIds = generateBattleQuestionIds();
 
             await updateDoc(lobbyRef, {
                 status: 'GAME',
-                gameQuestions: questions,
+                gameQuestionIds: questionIds, // Only IDs — each player resolves in their language
                 timePerQuestion: 12,
                 questionStartAt: serverTimestamp(),
                 [`players.${botProfile.uid}`]: {
@@ -376,12 +398,12 @@ export function useMultiplayer({
                     botElo: botProfile.stats.elo
                 }
             });
-            showNotification("Dołączył przeciwnik (BOT)!", 'success');
+            showNotification(t.multiplayer.notifications.botJoined, 'success');
         } catch (e) {
             console.error("Error adding bot manually:", e);
-            showNotification("Błąd dodawania bota.", 'error');
+            showNotification(t.multiplayer.errors.botError, 'error');
         }
-    }, [stats.elo, generateBattleQuestions, showNotification]);
+    }, [stats.elo, generateBattleQuestionIds, showNotification]);
 
     return {
         currentLobbyId,
@@ -399,6 +421,7 @@ export function useMultiplayer({
         multiplayerTimePerQuestion,
         setMultiplayerTimePerQuestion,
         generateBattleQuestions,
+        generateBattleQuestionIds,
         handleFind1v1Match,
         handleCreateLobby,
         handleJoinLobby,

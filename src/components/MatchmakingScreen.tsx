@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, Bot } from 'lucide-react';
 import { UserStats } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface MatchmakingScreenProps {
    stats: UserStats;
@@ -11,6 +12,7 @@ interface MatchmakingScreenProps {
 }
 
 const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ stats, opponent, onCancel, onAddBot }) => {
+   const { t } = useLanguage();
    const [dots, setDots] = useState('.');
    const [showBotOption, setShowBotOption] = useState(false);
 
@@ -60,13 +62,13 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ stats, opponent, 
                      className="flex flex-col items-center"
                   >
                      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-xs font-bold uppercase tracking-widest text-purple-300 mb-4 animate-pulse">
-                        <Search className="w-3 h-3" /> Szukanie rywala
+                        <Search className="w-3 h-3" /> {t.multiplayer.searching}
                      </div>
                      <h2 className="text-3xl md:text-4xl font-black italic tracking-tighter">
                         ARENA 1v1
                      </h2>
                      <p className="text-gray-400 font-medium">
-                        {showBotOption ? "Szukanie trwa dłużej niż zwykle..." : `Dobieranie przeciwnika${dots}`}
+                        {showBotOption ? t.multiplayer.searchingLong : `${t.multiplayer.searching}${dots}`}
                      </p>
                   </motion.div>
                ) : (
@@ -75,12 +77,12 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ stats, opponent, 
                      className="flex flex-col items-center"
                   >
                      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/20 border border-green-500/50 text-xs font-bold uppercase tracking-widest text-green-300 mb-4">
-                        Walka znaleziona!
+                        {t.multiplayer.found}
                      </div>
                      <h2 className="text-4xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600">
-                        GOTÓW!
+                        {t.multiplayer.ready}
                      </h2>
-                     <p className="text-gray-300 font-medium">Za chwilę rozpocznie się pojedynek...</p>
+                     <p className="text-gray-300 font-medium">{t.multiplayer.matchStartingSoon}</p>
                   </motion.div>
                )}
             </div>
@@ -114,7 +116,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ stats, opponent, 
                   </div>
 
                   <div className="bg-gray-800/80 backdrop-blur px-4 py-1.5 rounded-xl border border-white/10 text-center min-w-[100px]">
-                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ty</p>
+                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t.multiplayer.yours}</p>
                      <p className="font-bold text-white truncate max-w-[120px]">{stats.name}</p>
                   </div>
                </div>
@@ -160,9 +162,9 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ stats, opponent, 
                   </AnimatePresence>
 
                   <div className="bg-gray-800/80 backdrop-blur px-4 py-1.5 rounded-xl border border-white/10 text-center min-w-[100px]">
-                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Przeciwnik</p>
+                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{t.multiplayer.opponent}</p>
                      <p className="font-bold text-white truncate max-w-[120px]">
-                        {opponent ? (opponent.nick || opponent.displayName || "Gracz") : "Szukanie..."}
+                        {opponent ? (opponent.nick || opponent.displayName || stats.name) : t.multiplayer.searching}
                      </p>
                   </div>
                </div>
@@ -183,7 +185,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ stats, opponent, 
                         className="group flex items-center justify-center gap-3 w-full py-4 bg-purple-600 hover:bg-purple-500 border border-purple-400/50 rounded-2xl shadow-[0_0_20px_rgba(147,51,234,0.3)] transition-all duration-300"
                      >
                         <Bot className="w-5 h-5 text-white" />
-                        <span className="font-bold text-white uppercase tracking-wider text-sm">Zagraj z BOTEM</span>
+                        <span className="font-bold text-white uppercase tracking-wider text-sm">{t.multiplayer.playWithBot}</span>
                      </motion.button>
                   )}
                </AnimatePresence>
@@ -195,7 +197,7 @@ const MatchmakingScreen: React.FC<MatchmakingScreenProps> = ({ stats, opponent, 
                      className="group flex items-center justify-center gap-3 w-full py-4 bg-white/5 hover:bg-red-500/20 border border-white/10 hover:border-red-500/50 rounded-2xl transition-all duration-300"
                   >
                      <X className="w-5 h-5 text-gray-400 group-hover:text-red-400" />
-                     <span className="font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-sm">Anuluj</span>
+                     <span className="font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-sm">{t.multiplayer.cancel}</span>
                   </button>
                )}
 

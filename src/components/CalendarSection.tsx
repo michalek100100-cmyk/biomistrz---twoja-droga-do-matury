@@ -1,8 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Play, ArrowLeft } from 'lucide-react';
 import { Topic, Unit } from '../types';
 import { isReviewDue } from '../services/srsService';
+import { useLanguage } from '../contexts/LanguageContext';
+import { ArrowLeft, CalendarIcon, ChevronLeft, ChevronRight, Play } from 'lucide-react'; // Assuming lucide-react for icons
+import { AnimatePresence, motion } from 'framer-motion';
+
+const SRS_INTERVALS = [1, 3, 7, 14, 21, 90];
 
 interface CalendarSectionProps {
     units: Unit[];
@@ -10,15 +13,8 @@ interface CalendarSectionProps {
     onBack?: () => void;
 }
 
-const DAYS = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'];
-const MONTHS = [
-    'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-    'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
-];
-
-const SRS_INTERVALS = [1, 3, 7, 14, 21, 90];
-
 const CalendarSection: React.FC<CalendarSectionProps> = ({ units, onStartQuiz, onBack }) => {
+    const { t, language } = useLanguage();
     const today = new Date();
     const [currentMonth, setCurrentMonth] = useState(today.getMonth());
     const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -144,7 +140,7 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ units, onStartQuiz, o
                 )}
                 <div className="flex items-center gap-2">
                     <CalendarIcon className="w-6 h-6 text-orange-500" />
-                    <h1 className="text-2xl font-black">Kalendarz Nauki</h1>
+                    <h1 className="text-2xl font-black">{t.calendar.title}</h1>
                 </div>
                 <div className="w-9" /> {/* Spacer */}
             </div>
@@ -154,14 +150,14 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ units, onStartQuiz, o
                 <div className="flex items-center justify-around">
                     <div className="text-center">
                         <p className="text-2xl font-black">{calendarTopics.length}</p>
-                        <p className="text-xs text-orange-100 font-bold">Tematów w planie</p>
+                        <p className="text-xs text-orange-100 font-bold">{t.calendar.topicsInPlan}</p>
                     </div>
                     <div className="w-px h-10 bg-white/20"></div>
                     <div className="text-center">
                         <p className="text-2xl font-black">
                             {calendarTopics.filter(t => isReviewDue(t.nextReviewDate)).length}
                         </p>
-                        <p className="text-xs text-orange-100 font-bold">Do powtórki dziś</p>
+                        <p className="text-xs text-orange-100 font-bold">{t.calendar.dueToday}</p>
                     </div>
                 </div>
             </div>
@@ -177,7 +173,7 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ units, onStartQuiz, o
                         <ChevronLeft className="w-5 h-5" />
                     </button>
                     <h2 className="text-lg font-black">
-                        {MONTHS[currentMonth]} {currentYear}
+                        {t.calendar.months[currentMonth]} {currentYear}
                     </h2>
                     <button
                         onClick={nextMonth}
@@ -189,7 +185,7 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ units, onStartQuiz, o
 
                 {/* Day Headers */}
                 <div className="grid grid-cols-7 gap-2 mb-2">
-                    {DAYS.map(day => (
+                    {t.calendar.days.map(day => (
                         <div key={day} className="text-center text-xs font-bold text-gray-500 uppercase">
                             {day}
                         </div>
@@ -247,7 +243,7 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ units, onStartQuiz, o
                         className="bg-white  rounded-2xl border-2 border-gray-200  p-6 shadow-sm"
                     >
                         <h3 className="text-lg font-black mb-4">
-                            {selectedDate.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}
+                            {selectedDate.toLocaleDateString(language === 'pl' ? 'pl-PL' : 'en-US', { day: 'numeric', month: 'long' })}
                         </h3>
                         <div className="space-y-3">
                             {selectedTopics.map(topic => {
@@ -264,10 +260,10 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ units, onStartQuiz, o
                                             <p className="font-bold text-sm">{topic.title}</p>
                                             <p className="text-xs text-gray-500">{topic.unitTitle}</p>
                                             {due && (
-                                                <p className="text-xs text-red-500 font-bold mt-1">⚡ Do powtórki!</p>
+                                                <p className="text-xs text-red-500 font-bold mt-1">{t.calendar.dueNow}</p>
                                             )}
                                             {!due && topic.nextReviewDate && new Date(topic.nextReviewDate).toISOString().split('T')[0] !== selectedDate?.toISOString().split('T')[0] && (
-                                                <p className="text-xs text-blue-500 font-bold mt-1">📅 Planowana powtórka</p>
+                                                <p className="text-xs text-blue-500 font-bold mt-1">{t.calendar.plannedReview}</p>
                                             )}
                                         </div>
                                         <button
@@ -278,7 +274,7 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ units, onStartQuiz, o
                                                 }`}
                                         >
                                             <Play className="w-4 h-4" />
-                                            Powtórz
+                                            {t.calendar.repeat}
                                         </button>
                                     </div>
                                 );
@@ -295,10 +291,10 @@ const CalendarSection: React.FC<CalendarSectionProps> = ({ units, onStartQuiz, o
                         <CalendarIcon className="w-10 h-10 text-gray-400" />
                     </div>
                     <h3 className="text-lg font-black text-gray-800  mb-2">
-                        Brak zaplanowanych powtórek
+                        {t.calendar.emptyTitle}
                     </h3>
                     <p className="text-sm text-gray-500">
-                        Ukończ quiz i dodaj temat do kalendarza, aby zacząć planować naukę!
+                        {t.calendar.emptyDesc}
                     </p>
                 </div>
             )}

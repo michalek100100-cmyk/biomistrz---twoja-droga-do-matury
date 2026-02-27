@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, LogOut, Loader2, Crown, Clock, BookOpen, ChevronRight, Edit3, Play } from 'lucide-react';
 import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebaseConfig';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Lobby, Unit, Topic } from '../types';
 
 interface LobbyScreenProps {
@@ -22,6 +23,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
     onGameStart,
     onStartCharades
 }) => {
+    const { t } = useLanguage();
     const [lobbyData, setLobbyData] = useState<Lobby | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -58,7 +60,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
     // 2. START GRY (HOST)
     const handleStartGame = async () => {
         if (!lobbyData || !selectedTopic) {
-            alert("Wybierz temat przed startem!");
+            alert(t.multiplayer.lobby.errorTopic);
             return;
         }
 
@@ -94,7 +96,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
             {/* HEADER */}
             <div className="p-6 flex justify-between items-start">
                 <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20">
-                    <p className="text-xs font-bold uppercase tracking-widest text-purple-200">Kod PIN</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-purple-200">{t.multiplayer.lobby.pin}</p>
                     <p className="text-4xl font-black tracking-widest font-mono">{lobbyData.pin}</p>
                 </div>
                 <button onClick={onLeave} className="p-3 bg-white/10 hover:bg-red-500/20 rounded-full transition-colors text-white/70 hover:text-red-300">
@@ -107,10 +109,10 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                 {/* TYTUŁ */}
                 <div className="text-center space-y-2">
                     <h1 className="text-3xl md:text-4xl font-black drop-shadow-lg">
-                        {isHost ? "Panel Organizatora" : "Poczekalnia"}
+                        {isHost ? t.multiplayer.lobby.organizerPanel : t.multiplayer.lobby.waitingRoom}
                     </h1>
                     <p className="text-purple-200 font-medium flex items-center justify-center gap-2">
-                        <Users className="w-5 h-5" /> {playersList.length} Graczy
+                        <Users className="w-5 h-5" /> {playersList.length} {t.multiplayer.lobby.players}
                     </p>
                 </div>
 
@@ -121,7 +123,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                         {/* 1. Wybór Tematu */}
                         <div className="space-y-3">
                             <label className="text-xs font-bold uppercase tracking-widest text-purple-300 flex items-center gap-2">
-                                <BookOpen className="w-4 h-4" /> Temat quizu
+                                <BookOpen className="w-4 h-4" /> {t.multiplayer.lobby.topicLabel}
                             </label>
 
                             {!selectedTopic ? (
@@ -129,7 +131,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                     onClick={() => setShowTopicSelector(true)}
                                     className="w-full py-4 bg-white/10 hover:bg-white/20 border-2 border-dashed border-white/30 rounded-2xl text-purple-200 font-bold hover:text-white transition-all"
                                 >
-                                    + Kliknij, aby wybrać temat
+                                    {t.multiplayer.lobby.topicChoose}
                                 </button>
                             ) : (
                                 <div className="flex items-center justify-between bg-purple-600 px-6 py-4 rounded-2xl shadow-lg cursor-pointer hover:bg-purple-500 transition-colors" onClick={() => setShowTopicSelector(true)}>
@@ -137,10 +139,10 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                         <span className="text-2xl">{selectedTopic.icon}</span>
                                         <div className="text-left">
                                             <h3 className="font-black text-white">{selectedTopic.title}</h3>
-                                            <p className="text-xs text-purple-200">{selectedTopic.questions.length} pytań</p>
+                                            <p className="text-xs text-purple-200">{t.multiplayer.lobby.questionsCount.replace('$1', selectedTopic.questions.length.toString())}</p>
                                         </div>
                                     </div>
-                                    <span className="text-xs font-black bg-white/20 px-3 py-1 rounded-full">ZMIEŃ</span>
+                                    <span className="text-xs font-black bg-white/20 px-3 py-1 rounded-full">{t.multiplayer.lobby.topicChange}</span>
                                 </div>
                             )}
                         </div>
@@ -149,7 +151,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">
                                 <label className="text-xs font-bold uppercase tracking-widest text-purple-300 flex items-center gap-2">
-                                    <Clock className="w-4 h-4" /> Czas na pytanie
+                                    <Clock className="w-4 h-4" /> {t.multiplayer.lobby.timeLabel}
                                 </label>
                                 <span className="font-black text-xl text-yellow-400">{timePerQuestion} s</span>
                             </div>
@@ -163,9 +165,9 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                 className="w-full h-3 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-yellow-400"
                             />
                             <div className="flex justify-between text-[10px] text-purple-400 font-bold uppercase">
-                                <span>Speed (3s)</span>
-                                <span>Standard (15s)</span>
-                                <span>Long (30s)</span>
+                                <span>{t.multiplayer.lobby.speedLabel}</span>
+                                <span>{t.multiplayer.lobby.standardLabel}</span>
+                                <span>{t.multiplayer.lobby.longLabel}</span>
                             </div>
                         </div>
 
@@ -178,7 +180,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                                 }`}
                         >
-                            Rozpocznij Wyścig
+                            {t.multiplayer.lobby.startRace}
                         </button>
                     </motion.div>
                 )}
@@ -190,15 +192,15 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                             <div className="w-16 h-16 bg-purple-500/20 rounded-2xl mx-auto flex items-center justify-center border border-purple-500/30">
                                 <Edit3 className="w-8 h-8 text-purple-400" />
                             </div>
-                            <h2 className="text-xl font-black">Ustawienia Kalambur</h2>
-                            <p className="text-sm text-purple-200">Wybierz czas na rysowanie. Temat zostanie wylosowany!</p>
+                            <h2 className="text-xl font-black">{t.multiplayer.lobby.charadesSettings}</h2>
+                            <p className="text-sm text-purple-200">{t.multiplayer.lobby.charadesSettingsDesc}</p>
                         </div>
 
                         {/* Suwak Czasu */}
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <label className="text-xs font-bold uppercase tracking-widest text-purple-300 flex items-center gap-2">
-                                    <Clock className="w-4 h-4" /> Czas na rundę
+                                    <Clock className="w-4 h-4" /> {t.multiplayer.lobby.timeLabel}
                                 </label>
                                 <span className="font-black text-2xl text-yellow-400">{timePerQuestion} s</span>
                             </div>
@@ -212,9 +214,9 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                 className="w-full h-3 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-yellow-400"
                             />
                             <div className="flex justify-between text-[10px] text-purple-400 font-bold uppercase tracking-tighter">
-                                <span>Szybka Gra (30s)</span>
-                                <span>Standard (60s)</span>
-                                <span>Długa (180s)</span>
+                                <span>{t.multiplayer.lobby.fastGameLabel}</span>
+                                <span>{t.multiplayer.lobby.standardLabel}</span>
+                                <span>{t.multiplayer.lobby.longLabel.replace('30s', '180s')}</span>
                             </div>
                         </div>
 
@@ -222,7 +224,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                         <div className="space-y-4">
                             <div className="flex justify-between items-center">
                                 <label className="text-xs font-bold uppercase tracking-widest text-purple-300 flex items-center gap-2">
-                                    🔁 Liczba rund
+                                    🔁 {t.multiplayer.lobby.roundsLabel}
                                 </label>
                                 <span className="font-black text-2xl text-yellow-400">{numberOfRounds}</span>
                             </div>
@@ -236,9 +238,9 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                 className="w-full h-3 bg-purple-900/50 rounded-lg appearance-none cursor-pointer accent-yellow-400"
                             />
                             <div className="flex justify-between text-[10px] text-purple-400 font-bold uppercase tracking-tighter">
-                                <span>1 runda</span>
-                                <span>5 rund</span>
-                                <span>10 rund</span>
+                                <span>{t.multiplayer.lobby.roundsCount.replace('$1', '1')}</span>
+                                <span>{t.multiplayer.lobby.roundsCount.replace('$1', '5')}</span>
+                                <span>{t.multiplayer.lobby.roundsCount.replace('$1', '10')}</span>
                             </div>
                         </div>
 
@@ -246,7 +248,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                             onClick={() => onStartCharades?.(timePerQuestion, numberOfRounds)}
                             className="w-full py-5 bg-gradient-to-r from-purple-500 to-pink-600 rounded-3xl font-black text-xl uppercase tracking-widest shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
                         >
-                            <Play className="w-6 h-6 fill-white" /> Startuj Kalambury
+                            <Play className="w-6 h-6 fill-white" /> {t.multiplayer.lobby.startCharades}
                         </button>
                     </motion.div>
                 )}
@@ -260,7 +262,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                             </div>
                             <div className="truncate">
                                 <p className="font-bold text-sm truncate text-purple-100">{player.nick}</p>
-                                {lobbyData.hostId === player.uid && <p className="text-[9px] text-yellow-300 font-black uppercase tracking-wider flex items-center gap-1"><Crown className="w-3 h-3" /> Host</p>}
+                                {lobbyData.hostId === player.uid && <p className="text-[9px] text-yellow-300 font-black uppercase tracking-wider flex items-center gap-1"><Crown className="w-3 h-3" /> {t.multiplayer.lobby.host}</p>}
                             </div>
                         </div>
                     ))}
@@ -275,8 +277,8 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                         className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-md flex flex-col pt-10"
                     >
                         <div className="p-6 flex justify-between items-center bg-gray-900 border-b border-gray-800">
-                            <h2 className="text-xl font-black text-white">Wybierz Temat</h2>
-                            <button onClick={() => setShowTopicSelector(false)} className="text-gray-400 hover:text-white font-bold">ZAMKNIJ</button>
+                            <h2 className="text-xl font-black text-white">{t.multiplayer.lobby.chooseTopic}</h2>
+                            <button onClick={() => setShowTopicSelector(false)} className="text-gray-400 hover:text-white font-bold">{t.multiplayer.lobby.close}</button>
                         </div>
                         <div className="flex-1 overflow-y-auto p-6 space-y-6">
                             {units.map(unit => (
@@ -293,7 +295,7 @@ const LobbyScreen: React.FC<LobbyScreenProps> = ({
                                                     <span className="text-2xl group-hover:scale-110 transition-transform">{topic.icon}</span>
                                                     <div>
                                                         <h4 className="font-bold text-white">{topic.title}</h4>
-                                                        <p className="text-xs text-gray-400">{topic.questions.length} pytań</p>
+                                                        <p className="text-xs text-gray-400">{t.multiplayer.lobby.questionsCount.replace('$1', topic.questions.length.toString())}</p>
                                                     </div>
                                                 </div>
                                                 <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-white" />

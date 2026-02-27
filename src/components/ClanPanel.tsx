@@ -10,7 +10,7 @@ import {
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Clan, ClanChatMessage } from '../types';
+import { Clan, ClanChatMessage, Unit } from '../types';
 import {
     createClan,
     joinClan,
@@ -24,6 +24,7 @@ import {
 } from '../services/clanService';
 import { getPlayerRanking } from '../services/rankingService';
 import { getFriends, Friend } from '../services/friendsService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 import ClanTerritoryMap from './ClanTerritoryMap';
 import ClanBossRaid from './ClanBossRaid';
@@ -43,6 +44,7 @@ interface ClanPanelProps {
     userAvatar: string;
     userGems: number;
     userElo?: number;
+    units: Unit[];
     onGemsSpent: (amount: number) => void;
 }
 
@@ -62,8 +64,9 @@ type PanelView = 'loading' | 'no-clan' | 'create' | 'join' | 'dashboard';
 type DashboardTab = 'info' | 'map' | 'boss' | 'diplomacy';
 
 const ClanPanel: React.FC<ClanPanelProps> = ({
-    userId, userName, userAvatar, userGems, userElo, onGemsSpent
+    userId, userName, userAvatar, userGems, userElo, units, onGemsSpent
 }) => {
+    const { t } = useLanguage();
     const [view, setView] = useState<PanelView>('loading');
     const [dashboardTab, setDashboardTab] = useState<DashboardTab>('info');
     const [clan, setClan] = useState<Clan | null>(null);
@@ -161,7 +164,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
             setClan(newClan);
             setView('dashboard');
         } else {
-            setError(result.error || 'Nie udało się stworzyć klanu.');
+            setError((t.clans.errors as any)[result.error || ''] || result.error || t.clans.errors.createError);
         }
         setLoading(false);
     };
@@ -179,7 +182,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
             setClan(newClan);
             setView('dashboard');
         } else {
-            setError(result.error || 'Nie udało się dołączyć.');
+            setError((t.clans.errors as any)[result.error || ''] || result.error || t.clans.errors.joinError);
         }
         setLoading(false);
     };
@@ -187,8 +190,8 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
     const handleLeaveClan = async () => {
         if (!clan) return;
         if (!confirm(clan.leaderId === userId
-            ? 'Jesteś liderem. Opuszczenie klanu spowoduje jego rozwiązanie. Kontynuować?'
-            : 'Czy na pewno chcesz opuścić klan?'
+            ? t.clans.actions.dissolveConfirm
+            : t.clans.actions.leaveConfirm
         )) return;
 
         setLoading(true);
@@ -198,7 +201,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
             setMessages([]);
             setView('no-clan');
         } else {
-            setError(result.error || 'Błąd.');
+            setError(result.error || t.common.error);
         }
         setLoading(false);
     };
@@ -211,7 +214,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
         if (result.success) {
             setChatInput('');
         } else {
-            setChatError(result.error || 'Błąd wysyłania.');
+            setChatError(result.error || t.clans.chat.error);
         }
     };
 
@@ -234,7 +237,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
             setClan(newClan);
             setShowFriendModal(false);
         } else {
-            setError(result.error || 'Błąd.');
+            setError(result.error || t.common.error);
         }
         setAddingFriendUid(null);
     };
@@ -264,7 +267,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
         return (
             <div className="flex flex-col items-center justify-center h-64 text-gray-400 space-y-4">
                 <Loader2 className="w-12 h-12 animate-spin text-emerald-400" />
-                <p className="font-bold animate-pulse">Ładowanie klanu...</p>
+                <p className="font-bold animate-pulse">{t.clans.loading}</p>
             </div>
         );
     }
@@ -276,10 +279,10 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                 <div className="text-center space-y-2 mb-6">
                     <h2 className="text-2xl font-black text-gray-800  flex items-center justify-center gap-2">
                         <Shield className="w-8 h-8 text-emerald-500" />
-                        Klany
+                        {t.clans.title}
                     </h2>
                     <p className="text-gray-400 font-bold text-xs uppercase tracking-widest">
-                        Dołącz do klanu lub stwórz własny
+                        {t.clans.subtitle}
                     </p>
                 </div>
 
@@ -291,7 +294,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                     >
                         <div className="flex items-center gap-3">
                             <Plus className="w-6 h-6" />
-                            Stwórz Klan
+                            {t.clans.createButton}
                         </div>
                         <ChevronRight className="w-6 h-6" />
                     </motion.button>
@@ -303,15 +306,15 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                     >
                         <div className="flex items-center gap-3">
                             <Users className="w-6 h-6" />
-                            Dołącz do Klanu
+                            {t.clans.joinButton}
                         </div>
                         <ChevronRight className="w-6 h-6" />
                     </motion.button>
                 </div>
 
                 <div className="text-center text-xs text-gray-500 space-y-1 pt-4">
-                    <p>Stworzenie klanu wymaga <strong>{TEST_MODE ? 0 : 100} ELO</strong> i <strong>{TEST_MODE ? 0 : 100} kasztanów</strong></p>
-                    <p>Twoje ELO: <strong>{actualElo}</strong> • Kasztany: <strong>{userGems}</strong></p>
+                    <p>{t.clans.requirements.replace('$1', (TEST_MODE ? 0 : 100).toString()).replace('$2', (TEST_MODE ? 0 : 100).toString())}</p>
+                    <p>{t.multiplayer.yours} ELO: <strong>{actualElo}</strong> • {t.shop.wallet.split(' ')[1]}: <strong>{userGems}</strong></p>
                 </div>
             </div>
         );
@@ -322,13 +325,13 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
         return (
             <div className="max-w-md mx-auto p-4 space-y-5 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <button onClick={() => { setView('no-clan'); setError(''); }} className="flex items-center gap-1 text-gray-400 font-bold text-sm hover:text-gray-200 transition-colors">
-                    <ArrowLeft className="w-4 h-4" /> Wróć
+                    <ArrowLeft className="w-4 h-4" /> {t.common.back}
                 </button>
 
                 <div className="text-center space-y-2">
-                    <h2 className="text-2xl font-black text-gray-800 ">Stwórz Klan</h2>
+                    <h2 className="text-2xl font-black text-gray-800 ">{t.clans.createTitle}</h2>
                     <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">
-                        Koszt: {TEST_MODE ? 0 : 100} kasztanów
+                        {t.clans.cost.replace('$1', (TEST_MODE ? 0 : 100).toString())}
                     </p>
                 </div>
 
@@ -341,13 +344,13 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
 
                 {/* Name */}
                 <div className="space-y-2">
-                    <label className="text-sm font-black text-gray-400 uppercase tracking-wider">Nazwa klanu</label>
+                    <label className="text-sm font-black text-gray-400 uppercase tracking-wider">{t.clans.nameLabel}</label>
                     <input
                         type="text"
                         value={clanName}
                         onChange={e => setClanName(e.target.value)}
                         maxLength={24}
-                        placeholder="np. Berserkerzy"
+                        placeholder={t.clans.placeholderName}
                         className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white font-bold placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                     <p className="text-xs text-gray-500 text-right">{clanName.length}/24</p>
@@ -355,7 +358,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
 
                 {/* Avatar */}
                 <div className="space-y-2">
-                    <label className="text-sm font-black text-gray-400 uppercase tracking-wider">Profilowe</label>
+                    <label className="text-sm font-black text-gray-400 uppercase tracking-wider">{t.clans.avatarLabel}</label>
                     <div className="flex flex-wrap gap-2">
                         {AVATAR_OPTIONS.map(emoji => (
                             <button
@@ -375,7 +378,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                 {/* Min ELO */}
                 <div className="space-y-2">
                     <label className="text-sm font-black text-gray-400 uppercase tracking-wider">
-                        Minimalne ELO
+                        {t.clans.eloLabel}
                     </label>
                     <input
                         type="number"
@@ -394,7 +397,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                             : <Lock className="w-5 h-5 text-yellow-400" />
                         }
                         <span className="font-bold text-white">
-                            {clanIsPublic ? 'Publiczny' : 'Prywatny'}
+                            {clanIsPublic ? t.clans.publicLabel : t.clans.privateLabel}
                         </span>
                     </div>
                     <button
@@ -410,7 +413,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                 {/* Map Location Picker */}
                 <div className="space-y-2">
                     <label className="text-sm font-black text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                        <MapPin className="w-4 h-4" /> Lokalizacja na mapie <span className="text-gray-600">(opcjonalne)</span>
+                        <MapPin className="w-4 h-4" /> {t.clans.locationLabel} <span className="text-gray-600">{t.clans.locationOptional}</span>
                     </label>
                     <div className="rounded-xl overflow-hidden border border-gray-700 h-48">
                         <MapContainer
@@ -428,7 +431,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                     </div>
                     {clanLocation && (
                         <p className="text-xs text-emerald-400 font-bold">
-                            📍 Wybrano: {clanLocation.lat.toFixed(4)}, {clanLocation.lng.toFixed(4)}
+                            {t.clans.locationSelected.replace('$1', clanLocation.lat.toFixed(4)).replace('$2', clanLocation.lng.toFixed(4))}
                         </p>
                     )}
                 </div>
@@ -441,7 +444,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                     className="w-full p-5 bg-gradient-to-r from-emerald-600 to-green-600 rounded-2xl shadow-xl flex items-center justify-center gap-3 text-white font-black text-lg uppercase tracking-wider disabled:opacity-50"
                 >
                     {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Plus className="w-6 h-6" />}
-                    {loading ? 'Tworzę...' : `Stwórz Klan (-${TEST_MODE ? 0 : 100} 🌰)`}
+                    {loading ? t.clans.creating : `${t.clans.createButton} (-${TEST_MODE ? 0 : 100} 🌰)`}
                 </motion.button>
             </div>
         );
@@ -452,18 +455,18 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
         return (
             <div className="max-w-md mx-auto p-4 space-y-5 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <button onClick={() => { setView('no-clan'); setError(''); }} className="flex items-center gap-1 text-gray-400 font-bold text-sm hover:text-gray-200 transition-colors">
-                    <ArrowLeft className="w-4 h-4" /> Wróć
+                    <ArrowLeft className="w-4 h-4" /> {t.common.back}
                 </button>
 
                 <div className="text-center space-y-2">
                     <h2 className="text-2xl font-black text-gray-800  flex items-center justify-center gap-2">
                         <Users className="w-7 h-7 text-blue-500" />
-                        Dołącz do Klanu
+                        {t.clans.joinTitle}
                     </h2>
                 </div>
 
                 {error && (
-                    <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm font-bold">
+                    <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-500/30 rounded-xl text-red-400 text-sm font-bold">
                         <AlertCircle className="w-5 h-5 shrink-0" />
                         {error}
                     </div>
@@ -476,7 +479,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                         type="text"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Szukaj klanu..."
+                        placeholder={t.clans.searchPlaceholder}
                         className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white font-bold placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                 </div>
@@ -487,7 +490,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                     </div>
                 ) : filteredClans.length === 0 ? (
                     <div className="text-center text-gray-500 py-8 font-bold">
-                        Brak publicznych klanów do wyświetlenia
+                        {t.clans.noPublicClans}
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -503,7 +506,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                                     <div>
                                         <p className="font-black text-white">{c.name}</p>
                                         <p className="text-xs text-gray-400">
-                                            {c.memberCount} członków • {c.totalElo} ELO
+                                            {c.memberCount} {t.clans.stats.members} • {c.totalElo} ELO
                                             {c.minElo > 0 && ` • Min. ${c.minElo}`}
                                         </p>
                                     </div>
@@ -513,7 +516,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                                     disabled={loading}
                                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors disabled:opacity-50"
                                 >
-                                    Dołącz
+                                    {t.clans.joinButton.split(' ')[0]}
                                 </button>
                             </motion.div>
                         ))}
@@ -539,7 +542,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                     <h2 className="text-2xl font-black text-white">{clan.name}</h2>
                     <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">
                         {isLeader && <Crown className="inline w-4 h-4 text-yellow-400 mr-1" />}
-                        {members.length} członków
+                        {members.length} {t.clans.stats.members}
                     </p>
                 </div>
 
@@ -547,11 +550,11 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 text-center">
                         <p className="text-3xl font-black text-emerald-400">{clan.totalElo}</p>
-                        <p className="text-xs font-bold text-gray-400 uppercase">Łączne ELO</p>
+                        <p className="text-xs font-bold text-gray-400 uppercase">{t.clans.stats.totalElo}</p>
                     </div>
                     <div className="bg-purple-500/10 border border-purple-500/30 rounded-2xl p-4 text-center">
                         <p className="text-3xl font-black text-purple-400">{clan.averageWinrate}%</p>
-                        <p className="text-xs font-bold text-gray-400 uppercase">Śr. Winrate</p>
+                        <p className="text-xs font-bold text-gray-400 uppercase">{t.clans.stats.avgWinrate}</p>
                     </div>
                 </div>
 
@@ -559,10 +562,10 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                 <div className="flex bg-gray-800/50 rounded-xl p-1 shrink-0 overflow-x-auto hide-scrollbar">
                     {(['info', 'map', 'boss', 'diplomacy'] as DashboardTab[]).map(tab => {
                         const labels: Record<DashboardTab, string> = {
-                            info: 'Przegląd',
-                            map: 'Terytoria',
-                            boss: 'Boss',
-                            diplomacy: 'Dyplomacja'
+                            info: t.clans.tabs.info,
+                            map: t.clans.tabs.map,
+                            boss: t.clans.tabs.boss,
+                            diplomacy: t.clans.tabs.diplomacy
                         };
                         return (
                             <button
@@ -585,14 +588,14 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                         {/* Members List */}
                         <div className="space-y-2">
                             <div className="flex items-center justify-between px-2">
-                                <h4 className="text-sm font-black uppercase text-gray-400">Członkowie</h4>
+                                <h4 className="text-sm font-black uppercase text-gray-400">{t.clans.members}</h4>
                                 {canInvite && (
                                     <button
                                         onClick={handleOpenFriendModal}
                                         className="text-xs font-bold text-emerald-400 flex items-center gap-1 hover:text-emerald-300 transition-colors bg-emerald-500/10 px-2 py-1 rounded-lg"
                                     >
                                         <UserPlus className="w-3 h-3" />
-                                        Zaproś znajomego
+                                        {t.clans.inviteFriend}
                                     </button>
                                 )}
                             </div>
@@ -640,12 +643,12 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
 
                         {/* Clan Chat */}
                         <div className="space-y-2">
-                            <h4 className="text-sm font-black uppercase text-gray-400 px-2">Czat klanowy</h4>
+                            <h4 className="text-sm font-black uppercase text-gray-400 px-2">{t.clans.chat.title}</h4>
                             <div className="bg-gray-900/50 border border-gray-700 rounded-xl overflow-hidden">
                                 {/* Messages */}
                                 <div className="h-48 overflow-y-auto p-3 space-y-2">
                                     {messages.length === 0 && (
-                                        <p className="text-center text-gray-600 text-sm py-6">Brak wiadomości. Napisz pierwszą!</p>
+                                        <p className="text-center text-gray-600 text-sm py-6">{t.clans.chat.empty}</p>
                                     )}
                                     {messages.map(msg => (
                                         <div key={msg.id} className={`flex items-start gap-2 ${msg.senderId === userId ? 'flex-row-reverse' : ''}`}>
@@ -677,7 +680,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                                         value={chatInput}
                                         onChange={e => setChatInput(e.target.value)}
                                         onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-                                        placeholder="Napisz wiadomość..."
+                                        placeholder={t.clans.chat.placeholder}
                                         maxLength={200}
                                         className="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                                     />
@@ -702,7 +705,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                             className="w-full p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-400 font-bold flex items-center justify-center gap-2 hover:bg-red-500/20 transition-colors mt-8"
                         >
                             <LogOut className="w-5 h-5" />
-                            {isLeader && members.length === 1 ? 'Rozwiąż klan' : 'Opuść klan'}
+                            {isLeader && members.length === 1 ? t.clans.actions.dissolve : t.clans.actions.leave}
                         </button>
                     </div>
                 )}
@@ -717,7 +720,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                 {/* TAB CONTENT: BOSS */}
                 {dashboardTab === 'boss' && (
                     <div className="animate-in fade-in duration-300">
-                        <ClanBossRaid clan={clan} userId={userId} />
+                        <ClanBossRaid clan={clan} userId={userId} units={units} />
                     </div>
                 )}
 
@@ -735,7 +738,7 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                             <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-gray-800/30">
                                 <h3 className="text-lg font-black text-white flex items-center gap-2">
                                     <UserPlus className="w-5 h-5 text-emerald-400" />
-                                    Zaproś do klanu
+                                    {t.clans.inviteFriend}
                                 </h3>
                                 <button
                                     onClick={() => { setShowFriendModal(false); setError(''); }}
@@ -749,13 +752,12 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                                 {loadingFriends ? (
                                     <div className="flex flex-col items-center justify-center py-8 text-gray-400 space-y-3">
                                         <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-                                        <p className="font-bold text-sm">Pobieranie znajomych...</p>
+                                        <p className="font-bold text-sm">{t.clans.inviting}</p>
                                     </div>
                                 ) : friendsList.length === 0 ? (
                                     <div className="text-center py-8 text-gray-400">
                                         <Users className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                                        <p className="font-bold">Nie masz jeszcze znajomych,</p>
-                                        <p className="text-xs">których mógłbyś zaprosić.</p>
+                                        <p className="font-bold">{t.friends.noFriends}</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-2">
@@ -777,14 +779,14 @@ const ClanPanel: React.FC<ClanPanelProps> = ({
                                                     </div>
 
                                                     {isAlreadyInClan ? (
-                                                        <span className="text-xs font-bold text-gray-500 px-3 py-1 bg-gray-800 rounded-lg">W klanie</span>
+                                                        <span className="text-xs font-bold text-gray-500 px-3 py-1 bg-gray-800 rounded-lg">{t.clans.inClan}</span>
                                                     ) : (
                                                         <button
                                                             onClick={() => handleAddFriend(friend.uid)}
                                                             disabled={isFriendLoading}
                                                             className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-800 text-white font-bold rounded-xl text-xs transition-colors"
                                                         >
-                                                            {isFriendLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Zaproś'}
+                                                            {isFriendLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t.clans.inviteFriend.split(' ')[0]}
                                                         </button>
                                                     )}
                                                 </div>

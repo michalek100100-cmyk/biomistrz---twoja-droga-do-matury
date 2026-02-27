@@ -3,6 +3,7 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { X, CheckCircle2, AlertCircle, Sparkles, RefreshCcw, Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Question } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface QuizSessionProps {
   questions: Question[];
@@ -67,6 +68,7 @@ const QuizSession: React.FC<QuizSessionProps> = ({
   savedQuestionIds = [],
   onToggleSave = () => { }
 }) => {
+  const { t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [score, setScore] = useState(initialScore);
 
@@ -92,7 +94,7 @@ const QuizSession: React.FC<QuizSessionProps> = ({
   }
 
   const shuffledOptions = useMemo(() => {
-    let options = currentQuestion.options || (currentQuestion.type === 'true_false' ? ['Prawda', 'Fałsz'] : []);
+    let options = currentQuestion.options || (currentQuestion.type === 'true_false' ? [t.quiz.true, t.quiz.false] : []);
     let optionsToShuffle = [...options];
     if (currentQuestion.type !== 'true_false') {
       optionsToShuffle.sort(() => Math.random() - 0.5);
@@ -249,7 +251,7 @@ const QuizSession: React.FC<QuizSessionProps> = ({
                 : 'bg-blue-50 text-blue-600 border-blue-100   '
                 }`}>
                 {isReviewMode ? (
-                  <span className="flex items-center gap-1"><RefreshCcw className="w-3 h-3" /> Poprawa błędów</span>
+                  <span className="flex items-center gap-1"><RefreshCcw className="w-3 h-3" /> {t.quiz.errorReview}</span>
                 ) : (
                   currentQuestion.topic
                 )}
@@ -257,8 +259,8 @@ const QuizSession: React.FC<QuizSessionProps> = ({
 
               <span className="text-gray-400  text-xs font-bold uppercase tracking-widest">
                 {isReviewMode
-                  ? `Błąd ${reviewIndex + 1} z ${wrongIndices.length}`
-                  : `Zadanie ${currentIndex + 1} z ${questions.length}`
+                  ? t.quiz.errorOf.replace('$1', (reviewIndex + 1).toString()).replace('$2', wrongIndices.length.toString())
+                  : t.quiz.taskOf.replace('$1', (currentIndex + 1).toString()).replace('$2', questions.length.toString())
                 }
               </span>
             </div>
@@ -309,7 +311,7 @@ const QuizSession: React.FC<QuizSessionProps> = ({
                 className="bg-blue-50/50  p-8 rounded-[2.5rem] border-2 border-blue-50 "
               >
                 <h4 className="font-black text-blue-600  uppercase text-[10px] mb-3 flex items-center gap-2 tracking-widest">
-                  <Sparkles className="w-4 h-4" /> Wyjaśnienie BioMistrza
+                  <Sparkles className="w-4 h-4" /> {t.quiz.explanationTitle}
                 </h4>
                 <p className="text-gray-700  font-bold leading-relaxed italic text-sm md:text-base">
                   <FormattedText text={currentQuestion.explanation} />
@@ -336,7 +338,7 @@ const QuizSession: React.FC<QuizSessionProps> = ({
                 </div>
                 <div>
                   <h3 className={`text-2xl font-black ${isCorrect ? 'text-green-800 ' : 'text-red-800 '}`}>
-                    {isCorrect ? 'Doskonale!' : 'Poprawna odpowiedź:'}
+                    {isCorrect ? t.quiz.success : t.quiz.correctAnswerTitle}
                   </h3>
                   {!isCorrect && (
                     <p className="font-black text-red-600  text-lg">
@@ -355,7 +357,7 @@ const QuizSession: React.FC<QuizSessionProps> = ({
                 'bg-blue-600 text-white hover:bg-blue-500'
               }`}
           >
-            {isAnswered ? 'Kontynuuj' : 'Sprawdź'}
+            {isAnswered ? t.quiz.continue : t.quiz.check}
           </button>
         </div>
       </div>

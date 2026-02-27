@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { UserStats } from '../types';
 import LevelProgressBar from './LevelProgressBar';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface HomePageProps {
     stats: UserStats;
@@ -129,11 +130,13 @@ const StatsBackground: React.FC = () => {
 };
 
 const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onOpenMultiplayer, onOpenLevelRewards }) => {
+    const { t } = useLanguage();
+
     const tiles: TileItem[] = [
         {
             id: 'learn',
-            label: 'Ucz się',
-            description: 'Przeglądaj materiały',
+            label: t.home.tiles.learn.label,
+            description: t.home.tiles.learn.desc,
             icon: GraduationCap,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
@@ -141,8 +144,8 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
         },
         {
             id: 'multiplayer',
-            label: 'Arena 1v1',
-            description: 'Pojedynki online',
+            label: t.home.tiles.arena.label,
+            description: t.home.tiles.arena.desc,
             icon: Swords,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
@@ -151,8 +154,8 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
         },
         {
             id: 'practice',
-            label: 'Powtórki',
-            description: 'Ćwicz materiał',
+            label: t.home.tiles.practice.label,
+            description: t.home.tiles.practice.desc,
             icon: Brain,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
@@ -161,8 +164,8 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
         },
         {
             id: 'clan',
-            label: 'Klan',
-            description: 'Twoja drużyna',
+            label: t.home.tiles.clan.label,
+            description: t.home.tiles.clan.desc,
             icon: Shield,
             color: 'text-emerald-400',
             bgGradient: 'bg-transparent',
@@ -171,8 +174,8 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
 
         {
             id: 'leaderboard',
-            label: 'Ranking',
-            description: 'Zobacz najlepszych',
+            label: t.home.tiles.leaderboard.label,
+            description: t.home.tiles.leaderboard.desc,
             icon: Trophy,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
@@ -180,8 +183,8 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
         },
         {
             id: 'exams',
-            label: 'Arkusze',
-            description: 'Zadania maturalne',
+            label: t.home.tiles.exams.label,
+            description: t.home.tiles.exams.desc,
             icon: FileText,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
@@ -189,8 +192,8 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
         },
         {
             id: 'friends',
-            label: 'Znajomi',
-            description: 'Twoi znajomi',
+            label: t.home.tiles.friends.label,
+            description: t.home.tiles.friends.desc,
             icon: User,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
@@ -198,8 +201,8 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
         },
         {
             id: 'profile',
-            label: 'Profil',
-            description: 'Twoje konto',
+            label: t.home.tiles.profile.label,
+            description: t.home.tiles.profile.desc,
             icon: User,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
@@ -207,8 +210,8 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
         },
         {
             id: 'survey',
-            label: 'Ankieta',
-            description: 'Oceń aplikację',
+            label: t.home.tiles.survey.label,
+            description: t.home.tiles.survey.desc,
             icon: MessageSquare,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
@@ -216,27 +219,26 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
         },
         {
             id: 'settings',
-            label: 'Ustawienia',
-            description: 'Dostosuj',
+            label: t.home.tiles.settings.label,
+            description: t.home.tiles.settings.desc,
             icon: Settings,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
             size: 'small'
         },
         {
-            id: 'coffee',
-            label: 'Wesprzyj',
-            description: 'Kup mi kawę',
+            id: 'support',
+            label: t.home.tiles.support.label,
+            description: t.home.tiles.support.desc,
             icon: Coffee,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
-            size: 'small',
-            external: 'https://buycoffee.to/biomistrz?tab=subs'
+            size: 'small'
         },
         {
             id: 'calendar',
-            label: 'Kalendarz',
-            description: 'Twoje cele',
+            label: t.home.tiles.calendar.label,
+            description: t.home.tiles.calendar.desc,
             icon: Calendar,
             color: 'text-orange-50',
             bgGradient: 'bg-transparent',
@@ -275,7 +277,7 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
 
                 <div className="relative z-10 text-center space-y-2">
                     <h1 className="text-4xl font-black text-green-900 stats-font break-words leading-tight px-6 tracking-tight drop-shadow-sm">
-                        Witaj, {stats.name}!
+                        {t.home.welcome} {stats.name}!
                     </h1>
                     <div className="px-8 mt-2">
                         <LevelProgressBar
@@ -433,8 +435,8 @@ const HomePage: React.FC<HomePageProps> = ({ stats, reviewCount, onNavigate, onO
                         <Flame className="w-6 h-6 text-white" />
                     </div>
                     <div className="flex-1">
-                        <p className="text-white font-black">🔥 {stats.streak} dni serii!</p>
-                        <p className="text-orange-100 text-xs font-medium">Nie przegap dzisiejszej nauki</p>
+                        <p className="text-white font-black">🔥 {stats.streak} {t.home.streakDays}</p>
+                        <p className="text-orange-100 text-xs font-medium">{t.home.streakReminder}</p>
                     </div>
                 </motion.div>
             )}

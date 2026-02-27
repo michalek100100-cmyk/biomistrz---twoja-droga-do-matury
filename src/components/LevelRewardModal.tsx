@@ -3,6 +3,7 @@ import { X, Gift, Loader2, PackageOpen } from 'lucide-react';
 import { claimLevelReward } from '../services/levelRewardService';
 import { ITEMS_DB, getRarityColor, getRarityLabel } from '../services/inventoryService';
 import { ItemRarity } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface LevelRewardModalProps {
     userId: string;
@@ -13,6 +14,7 @@ interface LevelRewardModalProps {
 }
 
 const LevelRewardModal: React.FC<LevelRewardModalProps> = ({ userId, unclaimedLevels, onClose, onClaimSuccess, onOpenChest }) => {
+    const { t } = useLanguage();
     const [loadingMap, setLoadingMap] = useState<Record<number, boolean>>({});
 
     const handleClaim = async (level: number) => {
@@ -42,16 +44,16 @@ const LevelRewardModal: React.FC<LevelRewardModalProps> = ({ userId, unclaimedLe
                         <Gift className="w-10 h-10 text-white" />
                     </div>
 
-                    <h2 className="text-2xl font-black text-white mb-2">Skrzynki Zapasów</h2>
-                    <p className="text-sm font-bold text-gray-400 mb-6">Odbierz nagrody za zdobyte poziomy. Każda skrzynka zawiera losowy przedmiot!</p>
+                    <h2 className="text-2xl font-black text-white mb-2">{t.rewards.title}</h2>
+                    <p className="text-sm font-bold text-gray-400 mb-6">{t.rewards.desc}</p>
 
                     {/* List of unlcaimed chests */}
                     <div className="space-y-3 max-h-[40vh] overflow-y-auto px-2 pb-4">
                         {unclaimedLevels.length === 0 ? (
                             <div className="py-8 bg-gray-800/50 rounded-3xl border border-gray-800 border-dashed">
                                 <PackageOpen className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-                                <p className="text-gray-500 font-bold text-sm">Brak skrzynek do odebrania.</p>
-                                <p className="text-gray-600 text-xs mt-1">Graj i zdobywaj poziomy!</p>
+                                <p className="text-gray-500 font-bold text-sm">{t.rewards.empty}</p>
+                                <p className="text-gray-600 text-xs mt-1">{t.rewards.playMore}</p>
                             </div>
                         ) : (
                             unclaimedLevels.map(lvl => (
@@ -66,8 +68,8 @@ const LevelRewardModal: React.FC<LevelRewardModalProps> = ({ userId, unclaimedLe
                                             <Gift className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
                                         </div>
                                         <div className="text-left relative z-10">
-                                            <h4 className="font-black text-white text-md">Skrzynia Poziomu</h4>
-                                            <p className="text-xs font-bold text-gray-400">Za osiągnięcie {lvl} lvl</p>
+                                            <h4 className="font-black text-white text-md">{t.rewards.chestTitle}</h4>
+                                            <p className="text-xs font-bold text-gray-400">{t.rewards.forLevel.replace('$1', lvl.toString())}</p>
                                         </div>
                                     </div>
                                     <div className="relative z-10">
@@ -75,7 +77,7 @@ const LevelRewardModal: React.FC<LevelRewardModalProps> = ({ userId, unclaimedLe
                                             <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
                                         ) : (
                                             <div className="bg-purple-600 text-white text-xs font-black px-4 py-2 rounded-lg uppercase tracking-wider group-hover:bg-purple-500 transition-colors">
-                                                Otwórz
+                                                {t.inventory.use}
                                             </div>
                                         )}
                                     </div>

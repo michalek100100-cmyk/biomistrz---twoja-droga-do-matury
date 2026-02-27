@@ -3,6 +3,7 @@ import { Clan, TradeOffer, InventoryItem } from '../types';
 import { requestAlliance, createTradeOffer, getOpenTradeOffers, acceptTradeOffer } from '../services/clanService';
 import { ITEMS_DB, getInventory } from '../services/inventoryService';
 import { Globe, ArrowRightLeft, Handshake, AlertCircle, Loader2, Plus, ShoppingCart, Tag } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ClanDiplomacyProps {
     clan: Clan;
@@ -10,6 +11,7 @@ interface ClanDiplomacyProps {
 }
 
 const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
+    const { t } = useLanguage();
     const [view, setView] = useState<'menu' | 'alliance' | 'trade'>('menu');
     const [tradeView, setTradeView] = useState<'list' | 'create'>('list');
     const [loading, setLoading] = useState(false);
@@ -49,10 +51,10 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
 
         const res = await requestAlliance(clan.id, targetClanId);
         if (res.success) {
-            setSuccess('Zaproszenie do sojuszu wysłane pomyślnie!');
+            setSuccess(t.clans.diplomacy.allianceSent);
             setTargetClanId('');
         } else {
-            setError(res.error || 'Wystąpił błąd.');
+            setError(res.error || t.common.error);
         }
         setLoading(false);
     };
@@ -60,7 +62,7 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
     const handleCreateTrade = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!requestItem) {
-            setError('Nie wybrano przedmiotu.');
+            setError(t.clans.diplomacy.errorNoItem);
             return;
         }
 
@@ -70,30 +72,30 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
 
         const res = await createTradeOffer(userId, clan.id, offerGems, [requestItem]);
         if (res.success) {
-            setSuccess('Oferta handlowa wystawiona!');
+            setSuccess(t.clans.diplomacy.offerPosted);
             setOfferGems(50);
             setTradeView('list');
             loadOffers();
         } else {
-            setError(res.error || 'Wystąpił błąd.');
+            setError(res.error || t.common.error);
         }
         setLoading(false);
     };
 
     const handleBuy = async (trade: TradeOffer) => {
-        const itemName = trade.offer?.items?.[0] || 'Przedmiot';
+        const itemName = trade.offer?.items?.[0] || t.clans.diplomacy.sellItem;
         const price = trade.request?.gems || 0;
-        if (!confirm(`Czy na pewno chcesz kupić ${itemName} za ${price} kasztanów?`)) return;
+        if (!confirm(t.clans.diplomacy.buyConfirm.replace('$1', itemName).replace('$2', price.toString()))) return;
         setLoading(true);
         setError('');
         setSuccess('');
 
         const res = await acceptTradeOffer(trade.id, userId);
         if (res.success) {
-            setSuccess('Przedmiot zakupiony!');
+            setSuccess(t.clans.diplomacy.itemBought);
             loadOffers();
         } else {
-            setError(res.error || 'Błąd podczas zakupu.');
+            setError(res.error || t.clans.diplomacy.errorBuy);
         }
         setLoading(false);
     };
@@ -123,8 +125,8 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                     >
                         <Handshake className="w-12 h-12 text-blue-400" />
                         <div>
-                            <h4 className="font-black text-white">Sojusze</h4>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Pakty o nieagresji</p>
+                            <h4 className="font-black text-white">{t.clans.diplomacy.alliances}</h4>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">{t.clans.diplomacy.alliancesDesc}</p>
                         </div>
                     </button>
                     <button
@@ -133,8 +135,8 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                     >
                         <ArrowRightLeft className="w-12 h-12 text-orange-400" />
                         <div>
-                            <h4 className="font-black text-white">Rynek Klanu</h4>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Handluj zasobami</p>
+                            <h4 className="font-black text-white">{t.clans.diplomacy.market}</h4>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">{t.clans.diplomacy.marketDesc}</p>
                         </div>
                     </button>
                 </div>
@@ -153,20 +155,20 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                 <div className="bg-gray-800/50 p-5 rounded-3xl border border-gray-700 animate-in slide-in-from-right-4 duration-300">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-black text-white text-lg flex items-center gap-2">
-                            <Handshake className="w-5 h-5 text-blue-400" /> Zaproponuj Sojusz
+                            <Handshake className="w-5 h-5 text-blue-400" /> {t.clans.diplomacy.proposeAlliance}
                         </h3>
-                        <button onClick={() => { setView('menu'); setError(''); setSuccess(''); }} className="text-xs font-bold text-gray-400 hover:text-white uppercase">Wróć</button>
+                        <button onClick={() => { setView('menu'); setError(''); setSuccess(''); }} className="text-xs font-bold text-gray-400 hover:text-white uppercase">{t.common.back}</button>
                     </div>
 
                     <form onSubmit={handleRequestAlliance} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">ID Klanu Docelowego</label>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t.clans.diplomacy.targetClanId}</label>
                             <input
                                 type="text"
                                 required
                                 value={targetClanId}
                                 onChange={e => setTargetClanId(e.target.value)}
-                                placeholder="Wpisz ID klanu..."
+                                placeholder={t.clans.diplomacy.targetClanPlaceholder}
                                 className="w-full bg-gray-900 border-2 border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none transition-colors"
                             />
                         </div>
@@ -176,7 +178,7 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                             className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Globe className="w-5 h-5" />}
-                            Wyślij Zaproszenie
+                            {t.clans.diplomacy.sendInvite}
                         </button>
                     </form>
                 </div>
@@ -187,7 +189,7 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                 <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
                     <div className="flex items-center justify-between">
                         <h3 className="font-black text-white text-lg flex items-center gap-2">
-                            <Tag className="w-5 h-5 text-orange-400" /> {tradeView === 'create' ? 'Wystaw Ofertę' : 'Dostępne Oferty'}
+                            <Tag className="w-5 h-5 text-orange-400" /> {tradeView === 'create' ? t.clans.diplomacy.createOffer : t.clans.diplomacy.availableOffers}
                         </h3>
                         <div className="flex gap-3">
                             {tradeView === 'list' && (
@@ -195,7 +197,7 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                                     onClick={() => setTradeView('create')}
                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-500 text-white text-xs font-black rounded-xl transition-colors uppercase tracking-wider"
                                 >
-                                    <Plus className="w-3.5 h-3.5" /> Wystaw ofertę
+                                    <Plus className="w-3.5 h-3.5" /> {t.clans.diplomacy.postOffer}
                                 </button>
                             )}
                             <button
@@ -207,7 +209,7 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                                 }}
                                 className="text-xs font-bold text-gray-400 hover:text-white uppercase"
                             >
-                                Wróć
+                                {t.common.back}
                             </button>
                         </div>
                     </div>
@@ -215,7 +217,7 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                     {tradeView === 'list' ? (
                         <div className="space-y-3">
                             {loading && <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-orange-500" /></div>}
-                            {!loading && offers.length === 0 && <div className="text-center py-10 text-gray-500 font-bold bg-gray-800/30 rounded-3xl border border-gray-700">Obecnie brak ofert na rynku.</div>}
+                            {!loading && offers.length === 0 && <div className="text-center py-10 text-gray-500 font-bold bg-gray-800/30 rounded-3xl border border-gray-700">{t.clans.diplomacy.emptyMarket}</div>}
                             {offers.map(offer => {
                                 const itemName = offer.offer?.items?.[0];
                                 const item = itemName ? Object.values(ITEMS_DB).find(i => i.name === itemName) : null;
@@ -229,9 +231,9 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                                                 {item?.icon || '📦'}
                                             </div>
                                             <div>
-                                                <h4 className="font-black text-white text-sm">{itemName || 'Przedmiot'}</h4>
+                                                <h4 className="font-black text-white text-sm">{itemName || t.clans.diplomacy.sellItem}</h4>
                                                 <p className="text-[10px] text-gray-500 font-bold uppercase">
-                                                    Od: {typeof offer.senderClanId === 'string' ? offer.senderClanId.substring(0, 8) : '???'}...
+                                                    {t.clans.diplomacy.from}: {typeof offer.senderClanId === 'string' ? offer.senderClanId.substring(0, 8) : '???'}...
                                                 </p>
                                             </div>
                                         </div>
@@ -241,7 +243,7 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                                                 <p className="text-lg font-black text-orange-400 flex items-center gap-1 justify-end">
                                                     {offer.request?.gems || 0} <span className="text-sm">🌰</span>
                                                 </p>
-                                                <p className="text-[10px] text-gray-500 font-bold uppercase">Cena</p>
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase">{t.clans.diplomacy.price}</p>
                                             </div>
                                             <button
                                                 onClick={() => handleBuy(offer)}
@@ -261,7 +263,7 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                                 <form onSubmit={handleCreateTrade} className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Przedmiot do Sprzedania</label>
+                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t.clans.diplomacy.sellItem}</label>
                                             <select
                                                 value={requestItem}
                                                 onChange={e => setRequestItem(e.target.value)}
@@ -275,7 +277,7 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Cena Sprzedaży (🌰)</label>
+                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t.clans.diplomacy.sellPrice}</label>
                                             <input
                                                 type="number"
                                                 min="1"
@@ -294,14 +296,14 @@ const ClanDiplomacy: React.FC<ClanDiplomacyProps> = ({ clan, userId }) => {
                                         className="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
                                     >
                                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRightLeft className="w-5 h-5" />}
-                                        Opublikuj Ofertę
+                                        {t.clans.diplomacy.postOffer}
                                     </button>
                                 </form>
                             ) : (
                                 <div className="text-center py-6">
                                     <AlertCircle className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                                    <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Twój ekwipunek jest pusty.</p>
-                                    <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold">Kup coś w sklepie, aby móc handlować!</p>
+                                    <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">{t.clans.diplomacy.emptyInventory}</p>
+                                    <p className="text-[10px] text-gray-500 mt-1 uppercase font-bold">{t.clans.diplomacy.emptyInventoryTip}</p>
                                 </div>
                             )}
                         </div>

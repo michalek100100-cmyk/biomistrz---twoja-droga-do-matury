@@ -3,6 +3,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../components/firebaseConfig';
 import { UserStats } from '../types';
+import { firebaseLimiter } from '../services/firebaseLimiterService';
 
 interface SyncData {
     stats: UserStats;
@@ -48,6 +49,13 @@ export const useFirebaseSync = ({
         try {
             const cleanData = JSON.parse(JSON.stringify(dataRef.current));
 
+            // Check if user has enough quota
+            const canUpdate = await firebaseLimiter.canWrite(userId);
+            if (!canUpdate) {
+                console.warn('🛑 Update blocked: Quota exceeded.');
+                return;
+            }
+
             await setDoc(doc(db, 'users', userId), {
                 stats: cleanData.stats,
                 quizProgress: cleanData.quizProgress,
@@ -55,6 +63,9 @@ export const useFirebaseSync = ({
                 settings: cleanData.settings,
                 lastActive: new Date().toISOString()
             }, { merge: true });
+
+            // Record the write
+            await firebaseLimiter.recordWrite(userId);
 
             pendingRef.current = false;
             console.log('✅ Synced to Firebase');

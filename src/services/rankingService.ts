@@ -25,6 +25,7 @@ export interface TopPlayer {
     tier: RankTier;
     wins: number;
     losses: number;
+    country?: string;
 }
 
 export type RankTier =
@@ -268,14 +269,16 @@ export const getTopPlayers = async (): Promise<TopPlayer[]> => {
             // Pobierz dane użytkownika
             let username = 'Gracz';
             let avatar = undefined;
+            let country = undefined;
 
             try {
                 const userRef = doc(db, 'users', userId);
                 const userSnap = await getDoc(userRef);
                 if (userSnap.exists()) {
                     const userData = userSnap.data();
-                    username = userData.username || userData.email?.split('@')[0] || 'Gracz';
-                    avatar = userData.photoURL;
+                    username = userData.stats?.name || userData.username || userData.email?.split('@')[0] || 'Gracz';
+                    avatar = userData.stats?.avatar || userData.photoURL;
+                    country = userData.stats?.country || 'PL';
                 }
             } catch (error) {
                 console.warn('Failed to fetch user data for:', userId);
@@ -288,7 +291,8 @@ export const getTopPlayers = async (): Promise<TopPlayer[]> => {
                 elo: ranking.elo,
                 tier: ranking.tier,
                 wins: ranking.wins,
-                losses: ranking.losses
+                losses: ranking.losses,
+                country
             });
         }
 

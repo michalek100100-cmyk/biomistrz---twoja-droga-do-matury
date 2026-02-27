@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, HeartHandshake, Coffee, ArrowRight, Check } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface IntroScreenProps {
   onFinish: () => void;
@@ -8,6 +9,7 @@ interface IntroScreenProps {
 }
 
 const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
+  const { t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Zredagowana treść podzielona na slajdy
@@ -17,24 +19,24 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
       icon: Sparkles,
       color: "text-blue-500",
       bgGradient: "from-blue-500/20 to-cyan-500/20",
-      title: `Cześć, ${userName}! 👋`, // ZMIANA: Personalizacja
-      content: "pamiętaj że to korzystasz z DARMOWEJ aplikacji, Z której NIC nie zarabiam"
+      title: t.intro.welcome.replace('$1', userName),
+      content: t.intro.freeApp
     },
     {
       id: 2,
       icon: HeartHandshake,
       color: "text-purple-500",
       bgGradient: "from-purple-500/20 to-pink-500/20",
-      title: "Sam jak palec",
-      content: "Apkę robię i opłacam zupełnie sam. udos†ępnij ją na grupie klasowej i pokaż rodzicom, bo może oni będą chcieli zainwestować w taką innicjatywę. "
+      title: t.intro.alone,
+      content: t.intro.aloneDesc
     },
     {
       id: 3,
       icon: Coffee,
       color: "text-amber-500",
       bgGradient: "from-amber-500/20 to-yellow-500/20",
-      title: "Każde 5zł miesięcznie = 1/400 miesięcznego utrzymania",
-      content: "Każde 5-10 zł miesięczne to duże wsparcie w urzymaniu aplikacji, nie pozwól bym musiał usunąć tą aplikację z powodu kosztów utrzymania."
+      title: t.intro.support,
+      content: t.intro.supportDesc
     }
   ];
 
@@ -102,9 +104,9 @@ const IntroScreen: React.FC<IntroScreenProps> = ({ onFinish, userName }) => {
           className="w-full max-w-xs bg-gray-900  text-white  py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl hover:scale-105 active:scale-95 transition-all"
         >
           {currentIndex === slides.length - 1 ? (
-            <>Zaczynamy! <Check className="w-5 h-5" /></>
+            <>{t.intro.letsGo} <Check className="w-5 h-5" /></>
           ) : (
-            <>Dalej <ArrowRight className="w-5 h-5" /></>
+            <>{t.intro.next} <ArrowRight className="w-5 h-5" /></>
           )}
         </button>
       </div>

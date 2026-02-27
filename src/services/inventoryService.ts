@@ -54,6 +54,13 @@ export const ITEMS_DB: Record<string, BaseItem> = {
         type: 'chest',
         price: 900
     },
+    'hero_chest': {
+        id: 'hero_chest',
+        name: 'Skrzynia Bohatera',
+        description: 'Nagroda za pokonanie bossa klanowego!',
+        icon: '🏆',
+        type: 'chest'
+    },
     'level_chest': {
         id: 'level_chest',
         name: 'Skrzynia Poziomu',
@@ -141,15 +148,16 @@ export const getRarityColor = (rarity: ItemRarity) => {
     }
 };
 
-export const getRarityLabel = (rarity: ItemRarity) => {
+export const getRarityLabel = (rarity: ItemRarity): string => {
     switch (rarity) {
         case 'common': return 'Zwykły';
         case 'rare': return 'Rzadki';
         case 'epic': return 'Epicki';
         case 'legendary': return 'Legendarny';
         case 'mythic': return 'Mityczny';
+        default: return 'Nieznany';
     }
-}
+};
 
 // ==========================================
 // 2. INTERNAL HELPERS (NO DB CALLS)

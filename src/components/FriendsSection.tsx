@@ -23,6 +23,7 @@ import {
     UserSearchResult
 } from '../services/friendsService';
 import { xpToLevel } from '../services/rankingService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface FriendsSectionProps {
     userId: string;
@@ -37,6 +38,7 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
     userAvatar,
     onInviteSent
 }) => {
+    const { t, language } = useLanguage();
     const [friends, setFriends] = useState<Friend[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
@@ -95,7 +97,7 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
     };
 
     const handleRemoveFriend = async (friendUid: string) => {
-        const confirmed = window.confirm('Czy na pewno chcesz usunąć znajomego?');
+        const confirmed = window.confirm(t.friends.removeConfirm);
         if (!confirmed) return;
 
         setIsAdding(friendUid);
@@ -133,8 +135,8 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
                 <div className="flex items-center justify-center gap-2">
                     <Users className="w-8 h-8 text-blue-500" />
                 </div>
-                <h2 className="text-3xl font-black text-gray-800 ">Znajomi</h2>
-                <p className="text-gray-400 text-sm">Zarządzaj swoją listą znajomych</p>
+                <h2 className="text-3xl font-black text-gray-800 ">{t.friends.title}</h2>
+                <p className="text-gray-400 text-sm">{t.friends.subtitle}</p>
             </div>
 
             {/* Add Friend Toggle */}
@@ -143,7 +145,7 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
                 className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all"
             >
                 {showSearch ? <X className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
-                {showSearch ? 'Zamknij wyszukiwarkę' : 'Dodaj znajomego'}
+                {showSearch ? t.friends.closeSearch : t.friends.addFriend}
             </button>
 
             {/* Search Section */}
@@ -163,7 +165,7 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Wyszukaj po nicku..."
+                                    placeholder={t.friends.searchPlaceholder}
                                     className="w-full pl-12 pr-4 py-3 bg-gray-50  border-2 border-gray-100  rounded-xl focus:border-blue-400 outline-none transition-colors font-medium text-gray-700 "
                                 />
                                 {isSearching && (
@@ -175,7 +177,7 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
                             {searchResults.length > 0 && (
                                 <div className="space-y-2">
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wide px-2">
-                                        Wyniki ({searchResults.length})
+                                        {t.friends.resultsTitle.replace('$1', searchResults.length.toString())}
                                     </p>
                                     {searchResults.map((user) => {
                                         const isAlreadyFriend = friendStatuses[user.uid];
@@ -200,12 +202,12 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
                                                 {isAlreadyFriend === true ? (
                                                     <div className="flex items-center gap-1 text-green-500 text-xs font-bold">
                                                         <UserCheck className="w-4 h-4" />
-                                                        <span>Znajomy</span>
+                                                        <span>{t.friends.statusFriend}</span>
                                                     </div>
                                                 ) : friendStatuses[user.uid] === 'pending' ? (
                                                     <div className="flex items-center gap-1 text-orange-500 text-xs font-bold">
                                                         <Loader2 className="w-4 h-4" />
-                                                        <span>Wysłano</span>
+                                                        <span>{t.friends.statusPending}</span>
                                                     </div>
                                                 ) : (
                                                     <button
@@ -214,7 +216,7 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
                                                         className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-bold hover:bg-blue-600 disabled:opacity-50 flex items-center gap-1"
                                                     >
                                                         {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                                                        Zaproś
+                                                        {t.friends.inviteButton}
                                                     </button>
                                                 )}
                                             </motion.div>
@@ -227,7 +229,7 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
                             {searchTerm.length >= 2 && !isSearching && searchResults.length === 0 && (
                                 <div className="text-center py-6 text-gray-400">
                                     <Frown className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                                    <p className="font-medium">Nie znaleziono użytkowników</p>
+                                    <p className="font-medium">{t.friends.noResults}</p>
                                 </div>
                             )}
                         </div>
@@ -240,7 +242,7 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
                 <div className="px-4 py-3 bg-gray-50  border-b border-gray-200 ">
                     <h3 className="font-bold text-gray-800  flex items-center gap-2">
                         <Users className="w-5 h-5 text-blue-500" />
-                        Twoi znajomi ({friends.length})
+                        {t.friends.yourFriends.replace('$1', friends.length.toString())}
                     </h3>
                 </div>
 
@@ -261,7 +263,7 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
                                 <div className="flex-1 min-w-0">
                                     <p className="font-bold text-gray-800  truncate">{friend.name}</p>
                                     <p className="text-xs text-gray-400">
-                                        Dodano {new Date(friend.addedAt).toLocaleDateString('pl-PL')}
+                                        {t.friends.addedOn.replace('$1', new Date(friend.addedAt).toLocaleDateString(language === 'pl' ? 'pl-PL' : 'en-US'))}
                                     </p>
                                 </div>
 
@@ -293,9 +295,9 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
                 ) : (
                     <div className="py-12 text-center">
                         <Users className="w-16 h-16 mx-auto text-gray-200  mb-4" />
-                        <p className="text-gray-400 font-medium">Brak znajomych</p>
+                        <p className="text-gray-400 font-medium">{t.friends.emptyFriends}</p>
                         <p className="text-gray-300  text-sm mt-1">
-                            Użyj wyszukiwarki, żeby dodać znajomych
+                            {t.friends.emptySearchTip}
                         </p>
                     </div>
                 )}

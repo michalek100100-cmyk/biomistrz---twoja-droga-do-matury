@@ -1,18 +1,19 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, ArrowLeft, Play, Hash, User as UserIcon, Swords, Plus, Edit3, Lock, Check, ChevronDown } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { UserStats } from '../types';
 
-// Rank definitions
-const RANKS = [
-  { id: 0, name: 'Trawa Przed Domem', emoji: '🌱', color: 'from-green-400 to-emerald-500', border: 'border-green-500', minElo: 0 },
-  { id: 1, name: 'Polana Wiedzy', emoji: '🌿', color: 'from-emerald-500 to-teal-600', border: 'border-teal-500', minElo: 400 },
-  { id: 2, name: 'Las Odkrywcy', emoji: '🌲', color: 'from-teal-500 to-cyan-600', border: 'border-cyan-500', minElo: 800 },
-  { id: 3, name: 'Góry Wytrwałości', emoji: '⛰️', color: 'from-cyan-500 to-blue-600', border: 'border-blue-500', minElo: 1200 },
-  { id: 4, name: 'Dolina Mistrzów', emoji: '🏔️', color: 'from-blue-500 to-indigo-600', border: 'border-indigo-500', minElo: 1600 },
-  { id: 5, name: 'Wieża Mędrców', emoji: '🏰', color: 'from-indigo-500 to-purple-600', border: 'border-purple-500', minElo: 2000 },
-  { id: 6, name: 'Pałac Geniuszy', emoji: '👑', color: 'from-purple-500 to-pink-600', border: 'border-pink-500', minElo: 2400 },
-  { id: 7, name: 'Olimp Biologów', emoji: '⚡', color: 'from-yellow-400 to-orange-500', border: 'border-yellow-500', minElo: 3000 },
+// This will be initialized in the component to use translations
+const getRanks = (t: any) => [
+  { id: 0, name: t.multiplayer.ranks[0], emoji: '🌱', color: 'from-green-400 to-emerald-500', border: 'border-green-500', minElo: 0 },
+  { id: 1, name: t.multiplayer.ranks[1], emoji: '🌿', color: 'from-emerald-500 to-teal-600', border: 'border-teal-500', minElo: 400 },
+  { id: 2, name: t.multiplayer.ranks[2], emoji: '🌲', color: 'from-teal-500 to-cyan-600', border: 'border-cyan-500', minElo: 800 },
+  { id: 3, name: t.multiplayer.ranks[3], emoji: '⛰️', color: 'from-cyan-500 to-blue-600', border: 'border-blue-500', minElo: 1200 },
+  { id: 4, name: t.multiplayer.ranks[4], emoji: '🏔️', color: 'from-blue-500 to-indigo-600', border: 'border-indigo-500', minElo: 1600 },
+  { id: 5, name: t.multiplayer.ranks[5], emoji: '🏰', color: 'from-indigo-500 to-purple-600', border: 'border-purple-500', minElo: 2000 },
+  { id: 6, name: t.multiplayer.ranks[6], emoji: '👑', color: 'from-purple-500 to-pink-600', border: 'border-pink-500', minElo: 2400 },
+  { id: 7, name: t.multiplayer.ranks[7], emoji: '⚡', color: 'from-yellow-400 to-orange-500', border: 'border-yellow-500', minElo: 3000 },
 ];
 
 // ELO reward milestones: every 100 ELO, increasing gem rewards
@@ -41,11 +42,14 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
   onFind1v1Match,
   onClaimReward
 }) => {
+  const { t } = useLanguage();
   const [gameMode, setGameMode] = useState<GameMode>('1v1');
   const [groupView, setGroupView] = useState<GroupView>('menu');
   const [pin, setPin] = useState('');
-  const [nick, setNick] = useState(stats.name);
+  const [nick, setNick] = useState('');
   const [showRankPath, setShowRankPath] = useState(false);
+
+  const RANKS = useMemo(() => getRanks(t), [t]);
 
   const userElo = stats.elo ?? 0;
   const claimedRewards = stats.claimedEloRewards ?? [];
@@ -55,7 +59,7 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
       if (userElo >= RANKS[i].minElo) return i;
     }
     return 0;
-  }, [userElo]);
+  }, [userElo, RANKS]);
 
   const currentRank = RANKS[currentRankIndex];
   const nextRank = RANKS[currentRankIndex + 1] || null;
@@ -81,8 +85,8 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
   }, [showRankPath]);
 
   const handleJoinSubmit = () => {
-    if (pin.length < 6) { alert("Kod PIN musi mieć 6 cyfr!"); return; }
-    if (!nick.trim()) { alert("Musisz podać nazwę!"); return; }
+    if (pin.length < 6) { alert(t.multiplayer.lobby.errorPin); return; }
+    if (!nick.trim()) { alert(t.multiplayer.lobby.errorNick); return; }
     onJoinLobby(pin, nick);
   };
 
@@ -152,8 +156,10 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
                         : 'bg-gray-900/50 border-gray-800 opacity-50'
                       }`}>
                       <div className="flex items-center gap-3">
-                        <span className={`text-3xl ${!isUnlocked ? 'grayscale opacity-50' : ''}`}>{rank.emoji}</span>
-                        <div>
+                        <div className={`w-14 h-14 bg-gradient-to-br ${rank.color} rounded-2xl flex items-center justify-center shrink-0 shadow-lg`}>
+                          <span className={`text-3xl ${!isUnlocked ? 'grayscale opacity-50' : ''}`}>{rank.emoji}</span>
+                        </div>
+                        <div className="flex-1 text-left">
                           <h3 className={`font-black text-sm tracking-tight ${isCurrentRank ? 'text-white' : isUnlocked ? 'text-white' : 'text-gray-500'}`}>
                             {rank.name}
                           </h3>
@@ -215,14 +221,14 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
                       {isClaimed ? (
                         <div className="flex items-center gap-1 px-2 py-1 bg-green-500/20 rounded-lg">
                           <Check className="w-3 h-3 text-green-400" />
-                          <span className="text-[10px] font-black text-green-400">ODEBRANO</span>
+                          <span className="text-[10px] font-black text-green-400">{t.multiplayer.claimed}</span>
                         </div>
                       ) : canClaim ? (
                         <button
                           onClick={() => onClaimReward?.(item.elo, item.gems)}
                           className="px-3 py-1.5 bg-yellow-500 text-black rounded-lg text-[10px] font-black uppercase tracking-wide hover:bg-yellow-400 active:scale-95 transition-all shadow-lg shadow-yellow-500/30"
                         >
-                          ODBIERZ
+                          {t.multiplayer.claim}
                         </button>
                       ) : (
                         <Lock className="w-4 h-4 text-gray-700" />
@@ -255,7 +261,7 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
         </button>
         <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full">
           <Swords className="w-4 h-4 text-white" />
-          <span className="text-xs font-black uppercase text-white tracking-widest">Arena</span>
+          <span className="text-xs font-black uppercase text-white tracking-widest">{t.multiplayer.title}</span>
         </div>
         <div className="flex items-center gap-1 px-3 py-1.5 bg-yellow-100  rounded-full">
           <span className="text-xs font-black text-yellow-600 ">🏆 {userElo}</span>
@@ -275,10 +281,10 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
                   <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
                   <span className="text-7xl drop-shadow-lg">{currentRank.emoji}</span>
                   <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-3 py-1 bg-white  rounded-full shadow-lg">
-                    <span className="text-[10px] font-black uppercase text-gray-600 ">Twoja ranga</span>
+                    <span className="text-[10px] font-black uppercase text-gray-600 ">{t.multiplayer.yourRank}</span>
                   </div>
                 </div>
-                <h2 className="mt-6 text-2xl font-black text-gray-900 ">{currentRank.name}</h2>
+                <h2 className="mt-6 text-2xl font-black text-gray-900 ">{t.multiplayer.ranks[currentRankIndex]}</h2>
                 <p className="text-sm font-bold text-gray-400  mt-1">
                   {currentRank.minElo} ELO {nextRank ? `→ ${nextRank.minElo} ELO` : '(MAX)'}
                 </p>
@@ -300,12 +306,12 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
 
                 <div className="flex items-center gap-1 mt-3 text-gray-400  group-hover:text-purple-500 transition-colors">
                   <ChevronDown className="w-4 h-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Zobacz ranking i nagrody</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{t.multiplayer.viewRankingRewards}</span>
                 </div>
               </button>
 
               <button onClick={onFind1v1Match} className="w-full max-w-xs py-5 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-2xl font-black uppercase tracking-widest text-xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3">
-                <Play className="w-7 h-7 fill-white" /> GRAJ
+                <Play className="w-7 h-7 fill-white" /> {t.multiplayer.playButton}
               </button>
             </motion.div>
           ) : gameMode === 'charades' ? (
@@ -317,8 +323,8 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
                       <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent" />
                       <Edit3 className="w-12 h-12 text-white" />
                     </div>
-                    <h1 className="text-2xl font-black text-gray-900 ">Biologiczne Kalambury</h1>
-                    <p className="text-gray-500  font-medium text-sm max-w-[280px] mx-auto">Jeden rysuje, drugi zgaduje! Graj ze znajomymi.</p>
+                    <h1 className="text-2xl font-black text-gray-900 ">{t.multiplayer.charadesTitle}</h1>
+                    <p className="text-gray-500  font-medium text-sm max-w-[280px] mx-auto">{t.multiplayer.charadesDesc}</p>
                   </div>
 
                   <div className="w-full space-y-4">
@@ -327,8 +333,8 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
                         <Play className="w-7 h-7 text-purple-600  ml-0.5" />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-lg font-black text-gray-800 ">Dołącz do znajomych</h3>
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Wpisz kod PIN</p>
+                        <h3 className="text-lg font-black text-gray-800 ">{t.multiplayer.joinFriends}</h3>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">{t.multiplayer.enterPin}</p>
                       </div>
                     </button>
 
@@ -337,8 +343,8 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
                         <Plus className="w-7 h-7 text-white" />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-lg font-black">Utwórz pokój</h3>
-                        <p className="text-xs text-purple-200 font-bold uppercase tracking-wider">Gra prywatna</p>
+                        <h3 className="text-lg font-black">{t.multiplayer.createRoom}</h3>
+                        <p className="text-xs text-purple-200 font-bold uppercase tracking-wider">{t.multiplayer.privateGame}</p>
                       </div>
                     </button>
                   </div>
@@ -346,26 +352,26 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
               ) : (
                 <div className="w-full space-y-6">
                   <div className="text-center">
-                    <h2 className="text-xl font-black text-gray-800 ">Dołącz do Kalamburów</h2>
-                    <p className="text-gray-500 text-sm">Podaj kod PIN pokoju</p>
+                    <h2 className="text-xl font-black text-gray-800 ">{t.multiplayer.joinCharades}</h2>
+                    <p className="text-gray-500 text-sm">{t.multiplayer.providePinCharades}</p>
                   </div>
                   <div className="space-y-4 text-left">
                     <div className="space-y-2">
-                      <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">Twoja nazwa</label>
+                      <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">{t.common.yourName}</label>
                       <div className="relative">
                         <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input type="text" value={nick} onChange={(e) => setNick(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-white  border-2 border-gray-100  rounded-2xl font-bold text-gray-800  focus:border-purple-500 outline-none transition-colors" placeholder="Twój Nick" />
+                        <input type="text" value={nick} onChange={(e) => setNick(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-white  border-2 border-gray-100  rounded-2xl font-bold text-gray-800  focus:border-purple-500 outline-none transition-colors" placeholder={t.common.yourNick} />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">Kod PIN</label>
+                      <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">{t.common.pinCode}</label>
                       <div className="relative">
                         <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input type="number" value={pin} onChange={(e) => setPin(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-white  border-2 border-gray-100  rounded-2xl font-black text-2xl text-gray-800  focus:border-purple-500 outline-none transition-colors tracking-widest" placeholder="000000" />
                       </div>
                     </div>
                   </div>
-                  <button onClick={handleJoinSubmit} className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black uppercase tracking-widest text-lg shadow-xl shadow-purple-200  transition-all active:scale-95">Wejdź do pokoju</button>
+                  <button onClick={handleJoinSubmit} className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black uppercase tracking-widest text-lg shadow-xl shadow-purple-200  transition-all active:scale-95">{t.multiplayer.enterRoom}</button>
                 </div>
               )}
             </motion.div>
@@ -377,8 +383,8 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
                     <div className="w-24 h-24 bg-gradient-to-tr from-purple-500 to-indigo-600 rounded-[2rem] mx-auto flex items-center justify-center shadow-xl mb-4">
                       <Users className="w-12 h-12 text-white" />
                     </div>
-                    <h1 className="text-2xl font-black text-gray-900 ">Wyzwanie Grupowe</h1>
-                    <p className="text-gray-500  font-medium text-sm">Rywalizuj z przyjaciółmi w czasie rzeczywistym</p>
+                    <h1 className="text-2xl font-black text-gray-900 ">{t.multiplayer.groupChallenge}</h1>
+                    <p className="text-gray-500  font-medium text-sm">{t.multiplayer.groupChallengeDesc}</p>
                   </div>
                   <div className="w-full space-y-4">
                     <button onClick={() => setGroupView('join')} className="w-full p-5 bg-white  rounded-2xl border-2 border-purple-100  shadow-lg flex items-center gap-5 hover:border-purple-300 transition-all">
@@ -386,8 +392,8 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
                         <Play className="w-7 h-7 text-purple-600  ml-0.5" />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-lg font-black text-gray-800 ">Dołącz do gry</h3>
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Mam kod PIN</p>
+                        <h3 className="text-lg font-black text-gray-800 ">{t.multiplayer.joinGame}</h3>
+                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">{t.multiplayer.havePin}</p>
                       </div>
                     </button>
                     <button onClick={() => onCreateLobby('group')} className="w-full p-5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-xl flex items-center gap-5 text-white active:scale-95 transition-transform">
@@ -395,8 +401,8 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
                         <Plus className="w-7 h-7 text-white" />
                       </div>
                       <div className="text-left">
-                        <h3 className="text-lg font-black">Utwórz pokój</h3>
-                        <p className="text-xs text-purple-200 font-bold uppercase tracking-wider">Jestem organizatorem</p>
+                        <h3 className="text-lg font-black">{t.multiplayer.createRoomTitle}</h3>
+                        <p className="text-xs text-purple-200 font-bold uppercase tracking-wider">{t.multiplayer.createRoomSubtitle}</p>
                       </div>
                     </button>
                   </div>
@@ -404,26 +410,26 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
               ) : (
                 <div className="w-full space-y-6">
                   <div className="text-center">
-                    <h2 className="text-xl font-black text-gray-800 ">Podaj dane wejściowe</h2>
-                    <p className="text-gray-500 text-sm">Poproś organizatora o kod PIN</p>
+                    <h2 className="text-xl font-black text-gray-800 ">{t.multiplayer.inputDataTitle}</h2>
+                    <p className="text-gray-500 text-sm">{t.multiplayer.inputDataSubtitle}</p>
                   </div>
                   <div className="space-y-4 text-left">
                     <div className="space-y-2">
-                      <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">Twoja nazwa</label>
+                      <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">{t.multiplayer.yourNameLabel}</label>
                       <div className="relative">
                         <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                        <input type="text" value={nick} onChange={(e) => setNick(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-white  border-2 border-gray-100  rounded-2xl font-bold text-gray-800  focus:border-purple-500 outline-none transition-colors" placeholder="Twój Nick" />
+                        <input type="text" value={nick} onChange={(e) => setNick(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-white  border-2 border-gray-100  rounded-2xl font-bold text-gray-800  focus:border-purple-500 outline-none transition-colors" placeholder={t.common.yourNick} />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">Kod PIN</label>
+                      <label className="text-xs font-black uppercase text-gray-400 ml-2 tracking-widest">{t.multiplayer.pinCodeLabel}</label>
                       <div className="relative">
                         <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <input type="number" value={pin} onChange={(e) => setPin(e.target.value)} className="w-full pl-12 pr-4 py-4 bg-white  border-2 border-gray-100  rounded-2xl font-black text-2xl text-gray-800  focus:border-purple-500 outline-none transition-colors tracking-widest" placeholder="000000" />
                       </div>
                     </div>
                   </div>
-                  <button onClick={handleJoinSubmit} className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black uppercase tracking-widest text-lg shadow-xl shadow-purple-200  transition-all active:scale-95">Wejdź do gry</button>
+                  <button onClick={handleJoinSubmit} className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black uppercase tracking-widest text-lg shadow-xl shadow-purple-200  transition-all active:scale-95">{t.multiplayer.enterGameButton}</button>
                 </div>
               )}
             </motion.div>
@@ -437,10 +443,10 @@ const MultiplayerHub: React.FC<MultiplayerHubProps> = ({
             <Swords className="w-6 h-6" /> <span className="text-[10px] font-black uppercase tracking-wide">1v1</span>
           </button>
           <button onClick={() => { setGameMode('group'); setGroupView('menu'); }} className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl transition-all ${gameMode === 'group' ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg' : 'bg-gray-100  text-gray-500 '}`}>
-            <Users className="w-6 h-6" /> <span className="text-[10px] font-black uppercase tracking-wide">Grupa</span>
+            <Users className="w-6 h-6" /> <span className="text-[10px] font-black uppercase tracking-wide">{t.multiplayer.groupTab}</span>
           </button>
           <button onClick={() => setGameMode('charades')} className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl transition-all ${gameMode === 'charades' ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg' : 'bg-gray-100  text-gray-500 '}`}>
-            <Edit3 className="w-6 h-6" /> <span className="text-[10px] font-black uppercase tracking-wide">Kalambury</span>
+            <Edit3 className="w-6 h-6" /> <span className="text-[10px] font-black uppercase tracking-wide">{t.multiplayer.charadesTab}</span>
           </button>
         </div>
       </div>

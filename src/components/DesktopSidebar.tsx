@@ -13,9 +13,10 @@ import {
     Coffee,
     Sparkles,
     Calendar,
-    Shield,
-    Brain
+    Shield
 } from 'lucide-react';
+
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface DesktopSidebarProps {
     activeTab: string;
@@ -34,21 +35,23 @@ interface MenuItem {
 }
 
 const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, setActiveTab, reviewCount }) => {
+    const { t } = useLanguage();
 
     const menuItems: MenuItem[] = [
-        { id: 'learn', label: 'Nauka', icon: Home, color: 'text-blue-500' },
-        { id: 'multiplayer', label: 'Arena 1v1', icon: Swords, color: 'text-red-500' },
-        { id: 'calendar', label: 'Kalendarz', icon: Calendar, color: 'text-orange-500' },
-        { id: 'practice', label: 'Powtórki', icon: BookOpen, color: 'text-green-500', badge: reviewCount },
-        { id: 'leaderboard', label: 'Ranking', icon: Trophy, color: 'text-yellow-500' },
-        { id: 'clan', label: 'Klan', icon: Shield, color: 'text-emerald-500' },
+        { id: 'learn', label: t.home.tiles.learn.label, icon: Home, color: 'text-blue-500' },
+        { id: 'multiplayer', label: t.home.tiles.arena.label, icon: Swords, color: 'text-red-500' },
+        { id: 'calendar', label: t.home.tiles.calendar.label, icon: Calendar, color: 'text-orange-500' },
+        { id: 'practice', label: t.practiceCenter.title, icon: BookOpen, color: 'text-green-500', badge: reviewCount },
+        { id: 'leaderboard', label: t.home.tiles.leaderboard.label, icon: Trophy, color: 'text-yellow-500' },
+        { id: 'clan', label: t.home.tiles.clan.label, icon: Shield, color: 'text-emerald-500' },
         { id: 'divider1', label: '', icon: Home, color: '', divider: true },
-        { id: 'exams', label: 'Arkusze', icon: FileText, color: 'text-indigo-500' },
-        { id: 'studyhelp', label: 'Pomoc w nauce', icon: Brain, color: 'text-teal-500' },
-        { id: 'survey', label: 'Ankieta', icon: MessageSquare, color: 'text-pink-500' },
+        { id: 'exams', label: t.home.tiles.exams.label, icon: FileText, color: 'text-indigo-500' },
+        { id: 'survey', label: t.home.tiles.survey.label, icon: MessageSquare, color: 'text-pink-500' },
         { id: 'divider2', label: '', icon: Home, color: '', divider: true },
-        { id: 'profile', label: 'Profil', icon: User, color: 'text-purple-500' },
-        { id: 'settings', label: 'Ustawienia', icon: Settings, color: 'text-gray-500' },
+        { id: 'profile', label: t.home.tiles.profile.label, icon: User, color: 'text-purple-500' },
+        { id: 'settings', label: t.home.tiles.settings.label, icon: Settings, color: 'text-gray-500' },
+        { id: 'divider3', label: '', icon: Home, color: '', divider: true },
+        { id: 'support', label: t.home.tiles.support.label, icon: Coffee, color: 'text-rose-500' },
     ];
 
     const handleClick = (item: MenuItem) => {
@@ -107,15 +110,13 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = ({ activeTab, setActiveTab
             </nav>
 
             {/* Support Button */}
-            <a
-                href="https://buycoffee.to/biomistrz?tab=subs"
-                target="_blank"
-                rel="noopener noreferrer"
+            <button
+                onClick={() => setActiveTab('support')}
                 className="mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl shadow-lg shadow-rose-500/20 hover:shadow-rose-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all font-bold text-sm"
             >
                 <Coffee className="w-5 h-5" />
                 <span>Wesprzyj projekt</span>
-            </a>
+            </button>
         </aside>
     );
 };

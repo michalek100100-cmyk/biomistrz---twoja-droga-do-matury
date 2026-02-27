@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { ClanBoss, Clan, Question } from '../types';
+import { ClanBoss, Clan, Question, Unit } from '../types';
 import { subscribeToClanBoss, spawnClanBossIfNeeded, attackClanBoss } from '../services/bossService';
 import { getActiveBuffsClean } from '../services/inventoryService';
 import { Loader2, Shield, Sword, Sparkles, Timer, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ClanBossRaidProps {
     clan: Clan;
     userId: string;
+    units: Unit[];
 }
 
 const FormattedText: React.FC<{ text: string }> = ({ text }) => {
@@ -36,7 +38,8 @@ const FormattedText: React.FC<{ text: string }> = ({ text }) => {
     );
 };
 
-const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
+const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId, units }) => {
+    const { t } = useLanguage();
     const [boss, setBoss] = useState<ClanBoss | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -85,24 +88,32 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
         setQuizLoading(true);
         setError('');
         try {
-            const response = await fetch('/questions.json');
-            const data = await response.json();
-
-            // Flatten all questions from all sections
-            let allQs: any[] = [];
-            data.forEach((section: any) => {
-                allQs = [...allQs, ...section.questions];
+            // Flatten all questions from all sections in the localized units
+            let allQs: Question[] = [];
+            units.forEach(unit => {
+                unit.topics.forEach(topic => {
+                    const topicQuestions = topic.questions.map(q => ({
+                        ...q,
+                        topic: topic.title, // Add topic title for context if needed
+                        category: unit.title // Add unit title as category
+                    }));
+                    allQs = [...allQs, ...topicQuestions];
+                });
             });
 
+            if (allQs.length === 0) {
+                throw new Error("No questions available for raid.");
+            }
+
             // Randomly pick 10 questions
-            const shuffled = allQs.sort(() => 0.5 - Math.random());
+            const shuffled = [...allQs].sort(() => 0.5 - Math.random());
             const selected = shuffled.slice(0, 10).map(q => ({
                 id: q.id || Math.random().toString(),
-                type: q.options ? 'multiple_choice' : 'true_false',
+                type: q.type || (q.options ? 'multiple_choice' : 'true_false'),
                 question: q.question,
-                options: q.options || ['Prawda', 'Fałsz'],
-                correctAnswer: q.answer || q.correctAnswer,
-                explanation: q.explanation,
+                options: q.options || (q.type === 'true_false' ? [t.quiz.true, t.quiz.false] : []),
+                correctAnswer: q.correctAnswer,
+                explanation: q.explanation || '',
                 topic: q.topic,
                 category: q.category
             }));
@@ -113,7 +124,8 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
             setCorrectCount(0);
             setDamageDealt(null);
         } catch (e) {
-            setError('Nie udało się załadować pytań.');
+            console.error("Error loading questions for clan boss:", e);
+            setError(t.clans.boss.errorLoadQuestions);
         } finally {
             setQuizLoading(false);
         }
@@ -144,7 +156,7 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
             if (totalDamage > 0) {
                 const result = await attackClanBoss(clan.id, userId, totalDamage);
                 if (!result.success) {
-                    setError(result.error || 'Błąd zapisu obrażeń!');
+                    setError(result.error || t.clans.boss.errorSaveDamage);
                 }
             }
         }
@@ -153,7 +165,7 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
     const shuffledOptions = useMemo(() => {
         if (!questions[currentIndex]) return [];
         const q = questions[currentIndex];
-        if (q.type === 'true_false') return ['Prawda', 'Fałsz'];
+        if (q.type === 'true_false') return [t.quiz.true, t.quiz.false];
         return [...(q.options || [])].sort(() => Math.random() - 0.5);
     }, [questions, currentIndex]);
 
@@ -169,8 +181,8 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
         return (
             <div className="text-center py-10 bg-gray-800/50 rounded-3xl border border-gray-700">
                 <Shield className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                <h3 className="text-xl font-black text-white">Brak aktywnego bossa</h3>
-                <p className="text-gray-400 text-sm mt-2">Wróc później, lider klanu wkrótce przyzwie nową bestię.</p>
+                <h3 className="text-xl font-black text-white">{t.clans.boss.noBoss}</h3>
+                <p className="text-gray-400 text-sm mt-2">{t.clans.boss.noBossDesc}</p>
             </div>
         );
     }
@@ -181,9 +193,9 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
             <div className="bg-gray-900 border-2 border-purple-500 rounded-[2.5rem] p-6 space-y-6 relative overflow-hidden animate-in zoom-in duration-300">
                 <div className="flex justify-between items-center">
                     <span className="px-3 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-full text-[10px] font-black uppercase tracking-widest">
-                        Pytanie {currentIndex + 1} / {questions.length}
+                        {t.clans.boss.questionCount.replace('$1', (currentIndex + 1).toString()).replace('$2', questions.length.toString())}
                     </span>
-                    <span className="text-emerald-400 font-black text-xs">Punkty: {correctCount * 40} DMG</span>
+                    <span className="text-emerald-400 font-black text-xs">{t.clans.boss.points.replace('$1', (correctCount * 40).toString())}</span>
                 </div>
 
                 <div className="text-center py-4">
@@ -226,7 +238,7 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
                             onClick={nextQuestion}
                             className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-black uppercase rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-purple-900/40"
                         >
-                            {currentIndex === questions.length - 1 ? 'Zakończ Rajd' : 'Następne pytanie'} <ArrowRight className="w-5 h-5" />
+                            {currentIndex === questions.length - 1 ? t.clans.boss.finishRaid : t.clans.boss.nextQuestion} <ArrowRight className="w-5 h-5" />
                         </motion.button>
                     )}
                 </AnimatePresence>
@@ -249,16 +261,16 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
                 <div className="text-8xl mb-4 drop-shadow-[0_0_20px_rgba(168,85,247,0.4)]">
                     {boss.avatar}
                 </div>
-                <h3 className="text-3xl font-black text-white tracking-tight">{boss.name}</h3>
+                <h3 className="text-3xl font-black text-white tracking-tight">{(t.clans.boss.names as any)[boss.name] || boss.name}</h3>
 
                 <div className="flex justify-center items-center gap-2 mt-2 mb-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                     <Timer className="w-3 h-3 text-orange-400" />
-                    <span>Zniknie: {new Date(boss.activeUntil).toLocaleString()}</span>
+                    <span>{t.clans.boss.disappears.replace('$1', new Date(boss.activeUntil).toLocaleString())}</span>
                 </div>
 
                 <div className="px-6 mb-8">
                     <div className="flex justify-between text-[10px] font-black text-gray-400 mb-2 uppercase tracking-[0.2em]">
-                        <span>Status HP</span>
+                        <span>{t.clans.boss.hpStatus}</span>
                         <span className={isDead ? 'text-emerald-400' : 'text-white'}>{boss.currentHp} / {boss.maxHp}</span>
                     </div>
                     <div className="h-4 w-full bg-gray-900 rounded-full overflow-hidden border border-gray-800 shadow-inner">
@@ -278,7 +290,7 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
                                 animate={{ scale: 1, opacity: 1 }}
                                 className="mb-4 p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl text-emerald-400 font-bold text-sm"
                             >
-                                Zadano {damageDealt} DMG w ostatnim rajdzie! 💥
+                                {t.clans.boss.damageDealt.replace('$1', damageDealt.toString())}
                             </motion.div>
                         )}
                         <button
@@ -291,14 +303,12 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
                             ) : (
                                 <>
                                     <Sword className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                                    Rozpocznij Rajd (10 pytań)
+                                    {t.clans.boss.startRaid}
                                 </>
                             )}
                         </button>
-                        <p className="text-[10px] text-gray-500 font-bold mt-4 uppercase tracking-widest">
-                            Każda dobra odpowiedź to <span className="text-emerald-500">{Math.round(40 * multiplier)} DMG</span>
-                            {multiplier > 1 && <span className="text-purple-400 ml-1">(x{multiplier} Aktywny!)</span>}
-                        </p>
+                        {t.clans.boss.goodAnswerPoints.replace('$1', Math.round(40 * multiplier).toString())}
+                        {multiplier > 1 && <span className="text-purple-400 ml-1">{t.clans.boss.activeBuff.replace('$1', multiplier.toString())}</span>}
                     </div>
                 ) : (
                     <div className="py-6 flex flex-col items-center gap-3">
@@ -307,16 +317,16 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
                                 <div className="p-4 bg-emerald-500/20 rounded-full">
                                     <CheckCircle2 className="w-12 h-12 text-emerald-500" />
                                 </div>
-                                <span className="text-emerald-400 font-black uppercase tracking-widest text-xl">Bestia Pokonana! 🏆</span>
-                                <p className="text-gray-400 text-xs font-bold">Gratulacje dla klanu!</p>
+                                <span className="text-emerald-400 font-black uppercase tracking-widest text-xl">{t.clans.boss.beastDefeated}</span>
+                                <p className="text-gray-400 text-xs font-bold">{t.clans.boss.congrats}</p>
                             </>
                         ) : (
                             <>
                                 <div className="p-4 bg-red-500/20 rounded-full">
                                     <XCircle className="w-12 h-12 text-red-500" />
                                 </div>
-                                <span className="text-red-400 font-black uppercase tracking-widest text-xl">Boss Uciekł! 🏃‍♂️</span>
-                                <p className="text-gray-400 text-xs font-bold">Musicie być szybsi następnym razem.</p>
+                                <span className="text-red-400 font-black uppercase tracking-widest text-xl">{t.clans.boss.beastEscaped}</span>
+                                <p className="text-gray-400 text-xs font-bold">{t.clans.boss.beastEscapedDesc}</p>
                             </>
                         )}
                     </div>
@@ -327,14 +337,14 @@ const ClanBossRaid: React.FC<ClanBossRaidProps> = ({ clan, userId }) => {
             <div className="bg-gray-900/80 p-6 rounded-[2.5rem] border border-gray-800 shadow-xl backdrop-blur-md">
                 <div className="flex items-center gap-2 mb-5">
                     <Sparkles className="w-5 h-5 text-yellow-500" />
-                    <h4 className="font-black text-gray-400 text-sm uppercase tracking-widest">Bohaterowie Klanu</h4>
+                    <h4 className="font-black text-gray-400 text-sm uppercase tracking-widest">{t.clans.boss.clanHeroes}</h4>
                 </div>
                 {topAttackers.length === 0 ? (
-                    <p className="text-gray-600 text-center py-6 text-xs font-bold italic tracking-wide">Nikt jeszcze nie podniósł miecza...</p>
+                    <p className="text-gray-600 text-center py-6 text-xs font-bold italic tracking-wide">{t.clans.boss.noHeroes}</p>
                 ) : (
                     <div className="space-y-3">
                         {topAttackers.map((a, i) => {
-                            const pName = clan.members[a.uid]?.name || 'Nieznany';
+                            const pName = clan.members[a.uid]?.name || t.clans.boss.unknownHero;
                             return (
                                 <motion.div
                                     initial={{ x: -10, opacity: 0 }}

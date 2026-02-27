@@ -7,6 +7,7 @@ import {
   Maximize2, X, Shuffle, Layers, Dices, ArrowRight
 } from 'lucide-react';
 import { ExamTask, TaskBlock } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ExamSectionProps {
   onExamFinish?: (points: number) => void;
@@ -78,6 +79,7 @@ const groupBlocksIntoTasks = (blocks: TaskBlock[], examId: string, examTitle: st
 };
 
 const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
+  const { t } = useLanguage();
   const [currentExam, setCurrentExam] = useState<ExamTask | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState('');
@@ -108,9 +110,9 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
 
   // Ładowanie pliku JSON ze strumieniowym feedbackiem
   const loadJsonFile = async (file: string, onProgress?: (msg: string) => void): Promise<ExamTask> => {
-    onProgress?.('Pobieranie pliku...');
+    onProgress?.(t.exam.active.loadingTitle);
     const response = await fetch(`/tasks/${file}`);
-    if (!response.ok) throw new Error(`Nie znaleziono pliku: ${file}`);
+    if (!response.ok) throw new Error(`${t.exam.active.errorLoad}: ${file}`);
 
     // Dla dużych plików - czytamy przez reader aby pokazać postęp
     const contentLength = response.headers.get('content-length');
@@ -169,7 +171,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
       setCurrentExam({ ...data, id: examDef.id });
     } catch (err) {
       console.error(err);
-      setError("Nie udało się wczytać arkusza. Spróbuj ponownie.");
+      setError(t.exam.active.errorLoad);
     } finally {
       setLoading(false);
       setLoadingProgress('');
@@ -195,7 +197,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
       }
 
       if (allTaskGroups.length === 0) {
-        setError('Nie znaleziono żadnych zadań w wybranych arkuszach.');
+        setError(t.exam.randomSetup.errorNoTasks);
         return;
       }
 
@@ -211,7 +213,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
       // Build a fake ExamTask from picked groups
       const combined: ExamTask = {
         id: 'random_session',
-        title: `Losowy sprawdzian – ${picked.length} zadań`,
+        title: `${t.exam.randomSetup.title} – ${picked.length}`,
         year: new Date().getFullYear().toString(),
         tags: ['losowe'],
         points: picked.length,
@@ -220,7 +222,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
       setCurrentExam(combined);
     } catch (err) {
       console.error(err);
-      setError('Błąd podczas losowania zadań. Spróbuj ponownie.');
+      setError(t.exam.randomSetup.errorGeneral);
     } finally {
       setRandomLoading(false);
     }
@@ -277,7 +279,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
 
   const finishExam = () => {
     if (onExamFinish) onExamFinish(currentTotalScore * 10);
-    alert(`Zakończono! Twój wynik to ${currentTotalScore} / ${maxPossiblePoints} pkt.`);
+    alert(`${t.quiz.success} ${t.exam.active.yourScore}: ${currentTotalScore} / ${maxPossiblePoints} pkt.`);
     if (currentExam?.id && currentExam.id !== 'random_session') {
       localStorage.removeItem(`exam_progress_${currentExam.id}`);
     }
@@ -286,7 +288,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
 
   const handleRestartExam = (e: React.MouseEvent, examId: string) => {
     e.stopPropagation();
-    if (confirm("Czy na pewno chcesz zresetować postęp tego arkusza?")) {
+    if (confirm(t.exam.restartConfirm)) {
       localStorage.removeItem(`exam_progress_${examId}`);
       setSavedExams(prev => prev.filter(id => id !== examId));
     }
@@ -301,29 +303,25 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
   };
 
   // ====== RENDER: LOADING ======
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-40 gap-4">
-        <RefreshCw className="w-12 h-12 text-purple-600 animate-spin" />
-        <p className="font-bold text-gray-500 text-lg">Wczytywanie arkusza...</p>
-        {loadingProgress && (
-          <p className="text-sm text-gray-400 animate-pulse">{loadingProgress}</p>
-        )}
-        <p className="text-xs text-gray-300 max-w-xs text-center">
-          Arkusz zawiera dużo obrazków — może to chwilę potrwać.
-        </p>
-      </div>
-    );
-  }
+  <div className="flex flex-col items-center justify-center py-40 gap-4">
+    <RefreshCw className="w-12 h-12 text-purple-600 animate-spin" />
+    <p className="font-bold text-gray-500 text-lg">{t.exam.active.loadingTitle}</p>
+    {loadingProgress && (
+      <p className="text-sm text-gray-400 animate-pulse">{t.exam.active.loadingProgress.replace('$1', loadingProgress)}</p>
+    )}
+    <p className="text-xs text-gray-300 max-w-xs text-center">
+      {t.exam.active.loadingDesc}
+    </p>
+  </div>
 
   // ====== RENDER: RANDOM LOADING ======
   if (randomLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-40 gap-4">
         <Dices className="w-12 h-12 text-blue-500 animate-bounce" />
-        <p className="font-bold text-gray-500 text-lg">Losuję zadania...</p>
+        <p className="font-bold text-gray-500 text-lg">{t.exam.randomSetup.loadingTitle}</p>
         <p className="text-xs text-gray-300 max-w-xs text-center">
-          Pobieram arkusze i losuję zadania. Chwilę poczekaj.
+          {t.exam.randomSetup.loadingDesc}
         </p>
       </div>
     );
@@ -342,11 +340,11 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
             className="flex items-center gap-2 text-gray-500 hover:text-purple-600 font-bold transition-colors bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm"
           >
             {isRandom ? <X className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {isRandom ? 'Zakończ' : 'Zapisz i wyjdź'}
+            {isRandom ? t.exam.active.finish : t.exam.active.saveAndExit}
           </button>
 
           <div className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-            {isChecked ? <span className="text-emerald-500 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Tryb sprawdzania</span> : 'Tryb rozwiązywania'}
+            {isChecked ? <span className="text-emerald-500 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {t.exam.active.checkMode}</span> : t.exam.active.solveMode}
           </div>
         </div>
 
@@ -354,10 +352,10 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-purple-500 to-indigo-500" />
           <div className="flex justify-between items-start mb-4">
             <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider ${isRandom ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
-              {isRandom ? '🎲 Losowy' : currentExam?.year || 'ARKUSZ'}
+              {isRandom ? t.exam.active.randomBadge : currentExam?.year || 'ARKUSZ'}
             </span>
             <span className="flex items-center gap-1 text-gray-400 font-bold text-sm">
-              <Calculator className="w-4 h-4" /> {maxPossiblePoints} pkt
+              <Calculator className="w-4 h-4" /> {t.exam.active.points.replace('$1', maxPossiblePoints.toString())}
             </span>
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2 leading-tight">
@@ -393,7 +391,8 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
                 handleAnswerChange,
                 manualScores,
                 toggleManualPoint,
-                setZoomedImage
+                setZoomedImage,
+                t
               )}
             </div>
           ))}
@@ -405,7 +404,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
             {isChecked && (
               <div className="flex items-center gap-4 bg-gray-100 px-6 py-3 rounded-2xl">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Twój Wynik</span>
+                  <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{t.exam.active.yourScore}</span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-black text-purple-600">{currentTotalScore}</span>
                     <span className="text-sm font-bold text-gray-400">/ {maxPossiblePoints} pkt</span>
@@ -424,14 +423,14 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
                   onClick={checkAnswers}
                   className="w-full md:w-auto flex items-center justify-center gap-3 px-8 py-4 bg-gray-900 text-white rounded-2xl font-black text-sm uppercase tracking-wide shadow-xl transform hover:-translate-y-1 transition-all"
                 >
-                  Sprawdź odpowiedzi <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  {t.exam.active.checkButton} <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                 </button>
               ) : (
                 <button
                   onClick={finishExam}
                   className="w-full md:w-auto px-8 py-4 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-black text-sm uppercase tracking-wide shadow-lg transition-colors flex items-center justify-center gap-2"
                 >
-                  Zakończ egzamin <ChevronLeft className="w-4 h-4 rotate-180" />
+                  {t.exam.active.finishButton} <ChevronLeft className="w-4 h-4 rotate-180" />
                 </button>
               )}
             </div>
@@ -466,9 +465,9 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
     return (
       <div className="max-w-5xl mx-auto py-12 px-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-black text-gray-800 mb-4">Wybierz Tryb</h2>
+          <h2 className="text-4xl font-black text-gray-800 mb-4">{t.exam.modes.title}</h2>
           <p className="text-gray-500 max-w-lg mx-auto">
-            Wybierz w jaki sposób chcesz dzisiaj ćwiczyć materiał.
+            {t.exam.modes.subtitle}
           </p>
         </div>
 
@@ -483,10 +482,10 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
               <Shuffle className="w-8 h-8" />
             </div>
             <h3 className="text-2xl font-black text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
-              Losuj zadania
+              {t.exam.modes.random.title}
             </h3>
             <p className="text-gray-500 font-medium leading-relaxed">
-              Narzędzie dobierze losowe pytania z różnych arkuszy, tworząc dla Ciebie unikalny sprawdzian wiedzy.
+              {t.exam.modes.random.desc}
             </p>
           </button>
 
@@ -500,10 +499,10 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
               <Layers className="w-8 h-8" />
             </div>
             <h3 className="text-2xl font-black text-gray-900 mb-3 group-hover:text-purple-600 transition-colors">
-              Cały Arkusz
+              {t.exam.modes.full.title}
             </h3>
             <p className="text-gray-500 font-medium leading-relaxed">
-              Klasyczne rozwiązywanie pełnego arkusza od A do Z, w formie symulacji prawdziwego egzaminu maturalnego.
+              {t.exam.modes.full.desc}
             </p>
           </button>
         </div>
@@ -519,15 +518,15 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
           onClick={() => setViewMode('selection')}
           className="mb-8 flex items-center gap-2 text-gray-500 hover:text-blue-600 font-bold transition-colors"
         >
-          <ChevronLeft className="w-5 h-5" /> Wróć do wyboru trybu
+          <ChevronLeft className="w-5 h-5" /> {t.exam.randomSetup.back}
         </button>
 
         <div className="text-center mb-10">
           <div className="inline-flex p-4 bg-blue-500 rounded-2xl text-white mb-4 shadow-lg shadow-blue-300">
             <Dices className="w-8 h-8" />
           </div>
-          <h2 className="text-3xl font-black text-gray-800 mb-2">Losuj Zadania</h2>
-          <p className="text-gray-500">Skonfiguruj swój losowy sprawdzian</p>
+          <h2 className="text-3xl font-black text-gray-800 mb-2">{t.exam.randomSetup.title}</h2>
+          <p className="text-gray-500">{t.exam.randomSetup.subtitle}</p>
         </div>
 
         {error && (
@@ -541,7 +540,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
           {/* Liczba zadań */}
           <div>
             <label className="block text-sm font-black text-gray-700 mb-3 uppercase tracking-wide">
-              Liczba zadań do wylosowania
+              {t.exam.randomSetup.taskCountLabel}
             </label>
             <div className="flex gap-3 flex-wrap">
               {[3, 5, 8, 10, 15].map(n => (
@@ -562,7 +561,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
           {/* Wybór arkuszy */}
           <div>
             <label className="block text-sm font-black text-gray-700 mb-3 uppercase tracking-wide">
-              Źródło zadań (arkusze)
+              {t.exam.randomSetup.sourceLabel}
             </label>
             <div className="space-y-2">
               {AVAILABLE_EXAMS.map(exam => (
@@ -597,12 +596,12 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
             className="w-full flex items-center justify-center gap-3 px-8 py-4 bg-blue-500 hover:bg-blue-400 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-2xl font-black text-lg uppercase tracking-wide shadow-xl shadow-blue-200 transform hover:-translate-y-1 transition-all"
           >
             <Shuffle className="w-5 h-5" />
-            Losuj {randomCount} zadań
+            {t.exam.randomSetup.actionButton.replace('$1', randomCount.toString())}
             <ArrowRight className="w-5 h-5" />
           </button>
 
           <p className="text-center text-xs text-gray-400">
-            Pobieranie arkuszy może chwilę potrwać.
+            {t.exam.randomSetup.loadingNote}
           </p>
         </div>
       </div>
@@ -616,13 +615,13 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
         onClick={() => setViewMode('selection')}
         className="mb-8 flex items-center gap-2 text-gray-500 hover:text-purple-600 font-bold transition-colors"
       >
-        <ChevronLeft className="w-5 h-5" /> Wróć do wyboru trybu
+        <ChevronLeft className="w-5 h-5" /> {t.exam.randomSetup.back}
       </button>
 
       <div className="text-center mb-12">
-        <h2 className="text-4xl font-black text-gray-800 mb-4">Wybierz Arkusz</h2>
+        <h2 className="text-4xl font-black text-gray-800 mb-4">{t.exam.selection.title}</h2>
         <p className="text-gray-500 max-w-lg mx-auto">
-          <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">Arkusze Maturalne Będą dodawane stopniowo</code>.
+          <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono">{t.exam.selection.warning}</code>.
         </p>
       </div>
 
@@ -654,7 +653,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
                 </div>
                 {hasProgress ? (
                   <span className="px-3 py-1 bg-blue-100 text-blue-600 text-xs font-black uppercase tracking-wide rounded-full animate-pulse">
-                    W trakcie
+                    {t.exam.selection.inProgress}
                   </span>
                 ) : (
                   <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-black uppercase tracking-wide rounded-full">
@@ -677,7 +676,7 @@ const ExamSection: React.FC<ExamSectionProps> = ({ onExamFinish }) => {
 
               <div className="mt-4 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-purple-600 font-black text-sm">
-                  {hasProgress ? 'Wznów' : 'Rozpocznij'} <Play className="w-4 h-4 fill-current" />
+                  {hasProgress ? t.exam.selection.resume : t.exam.selection.start} <Play className="w-4 h-4 fill-current" />
                 </div>
 
                 {hasProgress && (
@@ -706,7 +705,8 @@ const renderBlockContent = (
   handleAnswerChange: (id: string, val: string) => void,
   manualScores: Record<string, number>,
   toggleManualPoint: (id: string, max: number) => void,
-  onImageClick: (url: string) => void
+  onImageClick: (url: string) => void,
+  t: any
 ) => {
 
   const ManualPointButton = ({ id, maxPoints = 1 }: { id: string, maxPoints?: number }) => {
@@ -725,9 +725,9 @@ const renderBlockContent = (
         `}
       >
         {isAwarded ? (
-          <><Check className="w-3 h-3" /> Zaliczono (+{maxPoints})</>
+          <><Check className="w-3 h-3" /> {t.common.save} (+{maxPoints})</>
         ) : (
-          <><PlusCircle className="w-3 h-3" /> Zalicz punkt</>
+          <><PlusCircle className="w-3 h-3" /> {t.exam.active.checkButton}</>
         )}
       </button>
     );
@@ -770,7 +770,7 @@ const renderBlockContent = (
                         <textarea
                           value={userAnswer}
                           onChange={(e) => handleAnswerChange(uniqueId, e.target.value)}
-                          placeholder={row.placeholder || "Wpisz odpowiedź..."}
+                          placeholder={row.placeholder || t.quiz.check}
                           rows={2}
                           className={`w-full p-3 rounded-lg border-2 outline-none transition-all font-medium resize-none
                               ${isChecked
@@ -784,7 +784,7 @@ const renderBlockContent = (
                     {isChecked && (
                       <div className="mt-2 pt-4 border-t border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-in fade-in">
                         <div className="flex-1">
-                          <span className="text-[10px] font-black uppercase text-emerald-600 mb-1 block">Przykładowa odpowiedź:</span>
+                          <span className="text-[10px] font-black uppercase text-emerald-600 mb-1 block">{t.quiz.correctAnswerTitle}</span>
                           <p className="text-sm font-bold text-gray-700 bg-emerald-50 p-2 rounded-lg border border-emerald-100">
                             {row.answerKey}
                           </p>

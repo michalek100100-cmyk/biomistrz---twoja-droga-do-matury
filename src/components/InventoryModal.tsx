@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { X, PackageOpen, Loader2, Sparkles } from 'lucide-react';
 import { InventoryItem, ActiveBuff, ItemRarity } from '../types';
 import { getInventory, ITEMS_DB, getRarityColor, getRarityLabel, useItem, getActiveBuffsClean } from '../services/inventoryService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface InventoryModalProps {
     userId: string;
@@ -11,6 +11,7 @@ interface InventoryModalProps {
 }
 
 const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose, onOpenChest }) => {
+    const { t } = useLanguage();
     const [items, setItems] = useState<InventoryItem[]>([]);
     const [activeBuffs, setActiveBuffs] = useState<ActiveBuff[]>([]);
     const [loading, setLoading] = useState(true);
@@ -55,7 +56,7 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose, onOpen
                 {/* Header */}
                 <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-800/50">
                     <h2 className="text-xl font-black text-white flex items-center gap-2">
-                        <PackageOpen className="w-6 h-6 text-purple-400" /> Plecak
+                        <PackageOpen className="w-6 h-6 text-purple-400" /> {t.inventory.title}
                     </h2>
                     <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full transition-colors text-gray-400 hover:text-white">
                         <X className="w-5 h-5" />
@@ -67,7 +68,7 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose, onOpen
                     {/* Active Buffs Section */}
                     {activeBuffs.length > 0 && (
                         <div className="space-y-2">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Aktywne Wzmocnienia</h3>
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">{t.inventory.activeBuffs}</h3>
                             <div className="grid gap-2">
                                 {activeBuffs.map(buff => (
                                     <div key={buff.id} className="bg-emerald-900/20 border border-emerald-500/30 rounded-xl p-3 flex justify-between items-center">
@@ -76,12 +77,12 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose, onOpen
                                             <div>
                                                 <p className="font-bold text-white text-sm">{buff.sourceItemName}</p>
                                                 <p className="text-xs text-emerald-400 font-black">
-                                                    Mnożnik x{buff.multiplier.toFixed(1)} {buff.type === 'xp_multiplier' ? 'XP' : 'ELO'}
+                                                    {t.inventory.multiplier.replace('$1', buff.multiplier.toFixed(1)).replace('$2', buff.type === 'xp_multiplier' ? 'XP' : 'ELO')}
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="text-xs text-gray-400 font-bold bg-black/30 px-2 py-1 rounded-lg">
-                                            Wygasa: {new Date(buff.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {t.inventory.expires.replace('$1', new Date(buff.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))}
                                         </div>
                                     </div>
                                 ))}
@@ -91,7 +92,7 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose, onOpen
 
                     {/* Inventory Items */}
                     <div>
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Twoje Przedmioty</h3>
+                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">{t.inventory.yourItems}</h3>
 
                         {loading ? (
                             <div className="flex justify-center py-10">
@@ -100,8 +101,8 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose, onOpen
                         ) : items.length === 0 ? (
                             <div className="text-center py-12 bg-gray-800/30 rounded-2xl border border-gray-800 border-dashed">
                                 <PackageOpen className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                                <p className="text-gray-400 font-bold mb-1">Twój plecak jest pusty</p>
-                                <p className="text-xs text-gray-500">Zdobywaj nagrody by otrzymać rzadkie przedmioty!</p>
+                                <p className="text-gray-400 font-bold mb-1">{t.inventory.empty}</p>
+                                <p className="text-xs text-gray-500">{t.inventory.emptyDesc}</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -129,8 +130,8 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose, onOpen
                                             </div>
 
                                             <div className="text-center w-full mb-3">
-                                                <h4 className="font-black text-white text-sm leading-tight mb-1">{base.name}</h4>
-                                                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{getRarityLabel(item.rarity)}</p>
+                                                <h4 className="font-black text-white text-sm leading-tight mb-1">{t.items[item.baseId]?.name || base.name}</h4>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">{(t.rarity as any)[item.rarity] || getRarityLabel(item.rarity)}</p>
                                             </div>
 
                                             <button
@@ -138,7 +139,7 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ userId, onClose, onOpen
                                                 disabled={isUsing}
                                                 className="w-full py-1.5 bg-black/40 hover:bg-black/60 active:scale-95 text-white text-xs font-bold uppercase tracking-wider rounded-lg transition-all flex justify-center items-center"
                                             >
-                                                {isUsing ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Użyj'}
+                                                {isUsing ? <Loader2 className="w-3 h-3 animate-spin" /> : t.inventory.use}
                                             </button>
                                         </div>
                                     );

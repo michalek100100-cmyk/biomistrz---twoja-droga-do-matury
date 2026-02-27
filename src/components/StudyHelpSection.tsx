@@ -6,6 +6,7 @@ import {
     ChevronLeft, CheckCircle2, Gauge, Settings2
 } from 'lucide-react';
 import { PomodoroState, PomodoroControls } from '../hooks/usePomodoroTimer';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // ─────────────────────────────────────────────
 // TYPES
@@ -44,6 +45,7 @@ interface PomodoroViewProps {
 }
 
 const PomodoroView: React.FC<PomodoroViewProps> = ({ onBack, state, controls }) => {
+    const { t } = useLanguage();
     const {
         phase, running, secondsLeft, totalSeconds, sessions,
         workMin, breakMin, longBreakMin
@@ -76,10 +78,10 @@ const PomodoroView: React.FC<PomodoroViewProps> = ({ onBack, state, controls }) 
     const strokeDashoffset = CIRCUMFERENCE * (1 - progress);
 
     const phaseColors = {
-        idle: { ring: '#6366f1', text: 'text-indigo-600', bg: 'from-indigo-500 to-violet-600', label: 'Gotowy' },
-        work: { ring: '#22c55e', text: 'text-green-600', bg: 'from-green-500 to-emerald-600', label: `Nauka (${workMin} min)` },
-        break: { ring: '#f97316', text: 'text-orange-500', bg: 'from-orange-400 to-amber-500', label: `Krótka przerwa (${breakMin} min)` },
-        longBreak: { ring: '#3b82f6', text: 'text-blue-500', bg: 'from-blue-500 to-cyan-500', label: `Długa przerwa (${longBreakMin} min)` },
+        idle: { ring: '#6366f1', text: 'text-indigo-600', bg: 'from-indigo-500 to-violet-600', label: t.studyHelp.pomodoro.phases.idle },
+        work: { ring: '#22c55e', text: 'text-green-600', bg: 'from-green-500 to-emerald-600', label: `${t.studyHelp.pomodoro.phases.work} (${workMin} min)` },
+        break: { ring: '#f97316', text: 'text-orange-500', bg: 'from-orange-400 to-amber-500', label: `${t.studyHelp.pomodoro.phases.break} (${breakMin} min)` },
+        longBreak: { ring: '#3b82f6', text: 'text-blue-500', bg: 'from-blue-500 to-cyan-500', label: `${t.studyHelp.pomodoro.phases.longBreak} (${longBreakMin} min)` },
     };
     const colors = phaseColors[phase];
 
@@ -92,7 +94,7 @@ const PomodoroView: React.FC<PomodoroViewProps> = ({ onBack, state, controls }) 
                 <button onClick={onBack} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
                     <ChevronLeft className="w-5 h-5 text-gray-600" />
                 </button>
-                <h2 className="text-2xl font-black text-gray-800 flex-1">Zegar Pomodoro</h2>
+                <h2 className="text-2xl font-black text-gray-800 flex-1">{t.studyHelp.pomodoro.title}</h2>
                 <button
                     onClick={() => setShowSettings(s => !s)}
                     className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
@@ -110,7 +112,7 @@ const PomodoroView: React.FC<PomodoroViewProps> = ({ onBack, state, controls }) 
                 >
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     <p className="text-sm font-bold text-green-700">
-                        Timer działa w tle – możesz odejść i wrócić tutaj w dowolnym momencie 🚀
+                        {t.studyHelp.pomodoro.runningBanner}
                     </p>
                 </motion.div>
             )}
@@ -125,11 +127,11 @@ const PomodoroView: React.FC<PomodoroViewProps> = ({ onBack, state, controls }) 
                         className="w-full overflow-hidden"
                     >
                         <div className="bg-gray-50 rounded-2xl p-4 space-y-4 border border-gray-100">
-                            <h3 className="font-black text-gray-700 text-sm uppercase tracking-widest">Ustawienia czasów</h3>
+                            <h3 className="font-black text-gray-700 text-sm uppercase tracking-widest">{t.studyHelp.pomodoro.settingsTitle}</h3>
                             {[
-                                { label: 'Nauka (min)', value: workMin, setter: setWorkMin, min: 1, max: 60 },
-                                { label: 'Krótka przerwa (min)', value: breakMin, setter: setBreakMin, min: 1, max: 30 },
-                                { label: 'Długa przerwa (min)', value: longBreakMin, setter: setLongBreakMin, min: 5, max: 60 },
+                                { label: t.studyHelp.pomodoro.workMin, value: workMin, setter: setWorkMin, min: 1, max: 60 },
+                                { label: t.studyHelp.pomodoro.breakMin, value: breakMin, setter: setBreakMin, min: 1, max: 30 },
+                                { label: t.studyHelp.pomodoro.longBreakMin, value: longBreakMin, setter: setLongBreakMin, min: 5, max: 60 },
                             ].map(({ label, value, setter, min, max }) => (
                                 <div key={label} className="flex items-center gap-4">
                                     <span className="text-sm font-bold text-gray-600 flex-1">{label}</span>
@@ -188,7 +190,7 @@ const PomodoroView: React.FC<PomodoroViewProps> = ({ onBack, state, controls }) 
 
             {sessions > 0 && (
                 <p className="text-sm text-gray-500 font-bold">
-                    Ukończone sesje: <span className="text-green-600 font-black">{sessions}</span>
+                    {t.studyHelp.pomodoro.sessionsCount}: <span className="text-green-600 font-black">{sessions}</span>
                 </p>
             )}
 
@@ -208,16 +210,16 @@ const PomodoroView: React.FC<PomodoroViewProps> = ({ onBack, state, controls }) 
                     }
                 </button>
 
-                <button onClick={skip} className="p-4 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors" title="Pomiń etap">
+                <button onClick={skip} className="p-4 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors" title={t.common.confirm}>
                     <Coffee className="w-6 h-6 text-gray-500" />
                 </button>
             </div>
 
             <p className="text-xs text-gray-400 font-bold text-center">
-                {phase === 'idle' && '▶ Naciśnij play, żeby zacząć naukę'}
-                {phase === 'work' && '🧠 Czas na skupioną naukę! Wyłącz rozpraszacze.'}
-                {phase === 'break' && '☕ Krótka przerwa. Wstań i się przeciągnij!'}
-                {phase === 'longBreak' && '🏖️ Długa przerwa. Zasłużony odpoczynek!'}
+                {phase === 'idle' && t.studyHelp.pomodoro.tips.idle}
+                {phase === 'work' && t.studyHelp.pomodoro.tips.work}
+                {phase === 'break' && t.studyHelp.pomodoro.tips.break}
+                {phase === 'longBreak' && t.studyHelp.pomodoro.tips.longBreak}
             </p>
         </div>
     );
@@ -227,6 +229,7 @@ const PomodoroView: React.FC<PomodoroViewProps> = ({ onBack, state, controls }) 
 // RSVP CUSTOM TEXT COMPONENT
 // ─────────────────────────────────────────────
 const RSVPView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+    const { t } = useLanguage();
     const [customText, setCustomText] = useState('');
     const [rsvpWords, setRsvpWords] = useState<string[]>([]);
     const [rsvpIndex, setRsvpIndex] = useState(0);
@@ -287,18 +290,20 @@ const RSVPView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                         <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(34,197,94,0.6)] animate-pulse">
                             <Zap className="w-12 h-12 text-black fill-current" />
                         </div>
-                        <h2 className="text-4xl font-black tracking-tight">Mój Tryb Ultra</h2>
+                        <h2 className="text-4xl font-black tracking-tight">{t.studyHelp.rsvp.introTitle}</h2>
                         <p className="text-gray-400 text-lg">
-                            Skup wzrok na <span className="text-red-500 font-bold">czerwonej literze</span> każdego słowa.
+                            {t.studyHelp.rsvp.introDesc.split('czerwonej literze')[0]}
+                            <span className="text-red-500 font-bold">czerwonej literze</span>
+                            {t.studyHelp.rsvp.introDesc.split('czerwonej literze')[1]}
                         </p>
                         <button
                             onClick={() => setRsvpPlaying(true)}
                             className="px-10 py-4 bg-white text-black text-xl font-black rounded-2xl hover:scale-105 transition-transform shadow-xl"
                         >
-                            ZACZNIJ
+                            {t.studyHelp.rsvp.startButton}
                         </button>
                         <p className="text-sm text-gray-500 font-mono">
-                            Słów: {rsvpWords.length} • ~{Math.ceil(rsvpWords.length / wpm)} min przy {wpm} WPM
+                            {t.studyHelp.rsvp.statsWords}: {rsvpWords.length} • ~{Math.ceil(rsvpWords.length / wpm)} {t.studyHelp.rsvp.statsTime} {wpm} WPM
                         </p>
                     </motion.div>
                 ) : (
@@ -347,7 +352,7 @@ const RSVPView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                     </div>
                                     {isHighSpeed && (
                                         <span className="text-[10px] uppercase font-black tracking-widest animate-pulse flex items-center gap-1">
-                                            <Gauge className="w-3 h-3" /> Strefa Prędkości
+                                            <Gauge className="w-3 h-3" /> {t.studyHelp.rsvp.speedZone}
                                         </span>
                                     )}
                                 </div>
@@ -361,9 +366,9 @@ const RSVPView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                                 className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center space-y-6 z-50"
                             >
                                 <CheckCircle2 className="w-20 h-20 text-green-500" />
-                                <h3 className="text-3xl font-black">Trening zakończony!</h3>
+                                <h3 className="text-3xl font-black">{t.studyHelp.rsvp.finishedTitle}</h3>
                                 <button onClick={handleExitRsvp} className="px-8 py-3 bg-white text-black font-bold rounded-xl hover:scale-105 transition-transform">
-                                    Wróć
+                                    {t.studyHelp.rsvp.returnButton}
                                 </button>
                             </motion.div>
                         )}
@@ -380,8 +385,8 @@ const RSVPView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <ChevronLeft className="w-5 h-5 text-gray-600" />
                 </button>
                 <div>
-                    <h2 className="text-2xl font-black text-gray-800">Mój Tryb Ultra</h2>
-                    <p className="text-sm text-gray-400 font-medium">Wklej własny tekst do szybkiego czytania</p>
+                    <h2 className="text-2xl font-black text-gray-800">{t.studyHelp.rsvp.headerTitle}</h2>
+                    <p className="text-sm text-gray-400 font-medium">{t.studyHelp.rsvp.headerSubtitle}</p>
                 </div>
             </div>
 
@@ -390,24 +395,24 @@ const RSVPView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div>
                     <h4 className="font-black text-green-800 mb-1">Technologia RSVP</h4>
                     <p className="text-sm text-green-700">
-                        Słowa wyświetlają się jedno po drugim. Skup wzrok na{' '}
-                        <span className="text-red-500 font-black">czerwonej literze</span>{' '}
-                        – mózg czyta błyskawicznie bez ruchu gałek ocznych!
+                        {t.studyHelp.rsvp.introTip.split('czerwonej literze')[0]}
+                        <span className="text-red-500 font-black">czerwonej literze</span>
+                        {t.studyHelp.rsvp.introTip.split('czerwonej literze')[1]}
                     </p>
                 </div>
             </div>
 
             <div className="flex flex-col gap-2">
-                <label className="text-sm font-black text-gray-600 uppercase tracking-widest">Twój tekst</label>
+                <label className="text-sm font-black text-gray-600 uppercase tracking-widest">{t.studyHelp.rsvp.labelYourText}</label>
                 <textarea
                     value={customText}
                     onChange={e => setCustomText(e.target.value)}
-                    placeholder="Wklej tutaj tekst do nauki – notatki, artykuł, streszczenie tematu..."
+                    placeholder={t.studyHelp.rsvp.placeholder}
                     className="w-full h-48 p-4 rounded-2xl border-2 border-gray-200 focus:border-green-400 focus:outline-none resize-none text-gray-700 font-medium text-sm leading-relaxed bg-white transition-colors placeholder:text-gray-300"
                 />
                 <div className="flex justify-between items-center text-xs text-gray-400 font-mono px-1">
                     <span>{customText.length} znaków</span>
-                    <span>~{Math.ceil(prepareCustomText(customText).length / 350)} min przy 350 WPM</span>
+                    <span>~{Math.ceil(prepareCustomText(customText).length / 350)} {t.studyHelp.rsvp.statsTime} 350 WPM</span>
                 </div>
             </div>
 
@@ -417,7 +422,7 @@ const RSVPView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 className="w-full py-5 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black text-lg uppercase tracking-widest shadow-lg shadow-green-200 hover:scale-[1.02] active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-3"
             >
                 <Zap className="w-6 h-6 fill-current" />
-                Zacznij Czytać
+                {t.studyHelp.rsvp.title}
             </button>
         </div>
     );
@@ -429,37 +434,53 @@ const RSVPView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 interface StudyHelpSectionProps {
     pomodoroState: PomodoroState;
     pomodoroControls: PomodoroControls;
+    initialView?: MainView;
+    onBack?: () => void;
 }
 
-const StudyHelpSection: React.FC<StudyHelpSectionProps> = ({ pomodoroState, pomodoroControls }) => {
-    const [view, setView] = useState<MainView>('menu');
+const StudyHelpSection: React.FC<StudyHelpSectionProps> = ({
+    pomodoroState,
+    pomodoroControls,
+    initialView = 'menu',
+    onBack: onBackToHub
+}) => {
+    const { t } = useLanguage();
+    const [view, setView] = useState<MainView>(initialView);
+
+    const handleInternalBack = () => {
+        if (view === 'menu' && onBackToHub) {
+            onBackToHub();
+        } else {
+            setView('menu');
+        }
+    };
 
     if (view === 'pomodoro') {
-        return <PomodoroView onBack={() => setView('menu')} state={pomodoroState} controls={pomodoroControls} />;
+        return <PomodoroView onBack={handleInternalBack} state={pomodoroState} controls={pomodoroControls} />;
     }
     if (view === 'rsvp') {
-        return <RSVPView onBack={() => setView('menu')} />;
+        return <RSVPView onBack={handleInternalBack} />;
     }
 
     const tools = [
         {
             id: 'pomodoro' as MainView,
             icon: Timer,
-            label: 'Zegar Pomodoro',
-            description: 'Technika 25/5 – ucz się w skupionych blokach z przerwami',
+            label: t.studyHelp.pomodoro.title,
+            description: t.studyHelp.pomodoro.desc,
             gradient: 'from-indigo-500 to-violet-600',
             glow: 'shadow-indigo-200',
-            badge: '🔔 Dźwięk dzwonka',
+            badge: t.studyHelp.pomodoro.badge,
             active: pomodoroState.phase !== 'idle',
         },
         {
             id: 'rsvp' as MainView,
             icon: Zap,
-            label: 'Mój Tryb Ultra',
-            description: 'Wklej własny tekst i czytaj błyskawicznie w trybie RSVP',
+            label: t.studyHelp.rsvp.title,
+            description: t.studyHelp.rsvp.desc,
             gradient: 'from-green-500 to-emerald-600',
             glow: 'shadow-green-200',
-            badge: '⚡ Szybkie czytanie',
+            badge: t.studyHelp.rsvp.badge,
             active: false,
         },
     ];
@@ -467,11 +488,16 @@ const StudyHelpSection: React.FC<StudyHelpSectionProps> = ({ pomodoroState, pomo
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
             <div className="flex items-center gap-3">
+                {onBackToHub && (
+                    <button onClick={onBackToHub} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
+                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    </button>
+                )}
                 <div>
                     <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
-                        <BookOpen className="w-6 h-6 text-teal-500" /> Pomoc w nauce
+                        <BookOpen className="w-6 h-6 text-teal-500" /> {t.studyHelp.sectionTitle}
                     </h2>
-                    <p className="text-sm text-gray-400">Narzędzia, które pomogą Ci się efektywnie uczyć</p>
+                    <p className="text-sm text-gray-400">{t.studyHelp.sectionSubtitle}</p>
                 </div>
             </div>
 
@@ -504,7 +530,7 @@ const StudyHelpSection: React.FC<StudyHelpSectionProps> = ({ pomodoroState, pomo
                                     <p className="text-sm text-white/80 font-medium leading-snug">{tool.description}</p>
                                     {tool.active ? (
                                         <span className="inline-block mt-2 text-[10px] font-black uppercase tracking-widest bg-white/30 px-2 py-0.5 rounded-full">
-                                            ▶ Timer aktywny
+                                            ▶ {t.studyHelp.pomodoro.runningBanner}
                                         </span>
                                     ) : (
                                         <span className="inline-block mt-2 text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full">
@@ -520,9 +546,9 @@ const StudyHelpSection: React.FC<StudyHelpSectionProps> = ({ pomodoroState, pomo
             </div>
 
             <div className="bg-amber-50 border border-amber-100 rounded-2xl p-5">
-                <h4 className="font-black text-amber-800 text-sm mb-2">💡 Wskazówka BioMistrza</h4>
+                <h4 className="font-black text-amber-800 text-sm mb-2">{t.studyHelp.tipsTitle}</h4>
                 <p className="text-xs text-amber-700 leading-relaxed">
-                    Połącz oba narzędzia: użyj Pomodoro do organizacji czasu, a Tryb Ultra do szybkiej powtórki materiału w blokach nauki!
+                    {t.studyHelp.mainTip}
                 </p>
             </div>
         </motion.div>

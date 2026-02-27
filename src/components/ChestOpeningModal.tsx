@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 import { ItemRarity } from '../types';
 import { ITEMS_DB, getRarityColor, getRarityLabel } from '../services/inventoryService';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ChestOpeningModalProps {
     chestId: string;
@@ -11,6 +12,7 @@ interface ChestOpeningModalProps {
 }
 
 const ChestOpeningModal: React.FC<ChestOpeningModalProps> = ({ chestId, reward, onClose }) => {
+    const { t } = useLanguage();
     const [phase, setPhase] = useState<'closed' | 'shaking' | 'exploding' | 'revealed'>('closed');
     const chest = ITEMS_DB[chestId];
     const rewardItem = ITEMS_DB[reward.baseId];
@@ -125,10 +127,10 @@ const ChestOpeningModal: React.FC<ChestOpeningModalProps> = ({ chestId, reward, 
                                 transition={{ delay: 0.3 }}
                                 className="text-center space-y-2"
                             >
-                                <p className="text-white text-sm font-black uppercase tracking-[0.3em] opacity-60">Nowy Przedmiot!</p>
-                                <h3 className="text-3xl font-black text-white stats-font px-4">{rewardItem.name}</h3>
+                                <p className="text-white text-sm font-black uppercase tracking-[0.3em] opacity-60">{t.rewards.newItem}</p>
+                                <h3 className="text-3xl font-black text-white stats-font px-4">{t.items[reward.baseId]?.name || rewardItem.name}</h3>
                                 <div className={`inline-block px-3 py-1 rounded-full border-2 font-black text-xs uppercase tracking-widest ${rarityColor}`}>
-                                    {getRarityLabel(reward.rarity)}
+                                    {(t.rarity as any)[reward.rarity] || getRarityLabel(reward.rarity)}
                                 </div>
                             </motion.div>
 
@@ -139,7 +141,7 @@ const ChestOpeningModal: React.FC<ChestOpeningModalProps> = ({ chestId, reward, 
                                 onClick={onClose}
                                 className="mt-12 px-8 py-3 bg-white text-black rounded-2xl font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all"
                             >
-                                Gotowe
+                                {t.common.confirm}
                             </motion.button>
                         </motion.div>
                     )}

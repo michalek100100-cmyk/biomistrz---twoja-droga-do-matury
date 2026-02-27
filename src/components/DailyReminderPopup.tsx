@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Bell, X, Play } from 'lucide-react';
 import { Topic } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface DailyReminderPopupProps {
     topics: (Topic & { unitTitle: string })[];
@@ -10,6 +11,8 @@ interface DailyReminderPopupProps {
 }
 
 const DailyReminderPopup: React.FC<DailyReminderPopupProps> = ({ topics, onStartQuiz, onDismiss }) => {
+    const { t } = useLanguage();
+
     if (topics.length === 0) return null;
 
     return (
@@ -34,11 +37,11 @@ const DailyReminderPopup: React.FC<DailyReminderPopupProps> = ({ topics, onStart
                 </div>
 
                 {/* Title */}
-                <h2 className="text-2xl font-black text-center mb-2">Czas na powtórkę! 🔥</h2>
+                <h2 className="text-2xl font-black text-center mb-2">{t.notifications.dailyReminderTitle}</h2>
 
                 {/* Message */}
                 <p className="text-center text-gray-600  mb-6">
-                    Powtórz dzisiaj {topics.length === 1 ? 'ten temat' : 'te tematy'}, a zapamiętasz {topics.length === 1 ? 'go' : 'je'} <span className="font-black text-orange-500">500% lepiej!</span>
+                    {topics.length === 1 ? t.notifications.dailyReminderDescSingle : t.notifications.dailyReminderDescMultiple} <span className="font-black text-orange-500">{t.notifications.dailyReminderBetter}</span>
                 </p>
 
                 {/* Topics List */}
@@ -60,7 +63,7 @@ const DailyReminderPopup: React.FC<DailyReminderPopupProps> = ({ topics, onStart
                                 className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl font-bold text-sm hover:bg-orange-600 transition-colors"
                             >
                                 <Play className="w-4 h-4" />
-                                Powtórz
+                                {t.notifications.repeat}
                             </button>
                         </div>
                     ))}
@@ -71,7 +74,7 @@ const DailyReminderPopup: React.FC<DailyReminderPopupProps> = ({ topics, onStart
                     onClick={onDismiss}
                     className="w-full py-3 bg-gray-100  text-gray-700  rounded-xl font-bold hover:bg-gray-200  transition-colors"
                 >
-                    Przypom nij później
+                    {t.notifications.remindLater}
                 </button>
             </motion.div>
         </div>

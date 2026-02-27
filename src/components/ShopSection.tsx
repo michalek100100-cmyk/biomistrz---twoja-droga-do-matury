@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Loader2, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { ITEMS_DB, buyItem } from '../services/inventoryService';
 import { BaseItem, ItemRarity } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface ShopSectionProps {
     userId: string;
@@ -11,6 +12,7 @@ interface ShopSectionProps {
 }
 
 const ShopSection: React.FC<ShopSectionProps> = ({ userId, userGems, onPurchaseSuccess }) => {
+    const { t } = useLanguage();
     const [buyingId, setBuyingId] = useState<string | null>(null);
     const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
@@ -25,10 +27,10 @@ const ShopSection: React.FC<ShopSectionProps> = ({ userId, userGems, onPurchaseS
         const result = await buyItem(userId, item.id, 'common' as ItemRarity);
 
         if (result.success) {
-            setStatus({ type: 'success', msg: `Kupiono: ${item.name}! 🎉` });
+            setStatus({ type: 'success', msg: t.shop.buySuccess.replace('$1', item.name) });
             onPurchaseSuccess(item.price || 0);
         } else {
-            setStatus({ type: 'error', msg: result.error || 'Błąd zakupu' });
+            setStatus({ type: 'error', msg: result.error || t.shop.buyError });
         }
 
         setBuyingId(null);
@@ -46,8 +48,8 @@ const ShopSection: React.FC<ShopSectionProps> = ({ userId, userGems, onPurchaseS
                     <ShoppingBag className="w-8 h-8 text-orange-500" />
                 </div>
                 <div>
-                    <h2 className="text-3xl font-black text-white tracking-tight">Sklepik</h2>
-                    <p className="text-orange-100/60 font-bold text-sm">Zainwestuj swoje kasztany w rozwój</p>
+                    <h2 className="text-3xl font-black text-white tracking-tight">{t.shop.title}</h2>
+                    <p className="text-orange-100/60 font-bold text-sm">{t.shop.subtitle}</p>
                 </div>
             </div>
 
@@ -60,7 +62,7 @@ const ShopSection: React.FC<ShopSectionProps> = ({ userId, userGems, onPurchaseS
                     <div className="flex items-center gap-3">
                         <img src="/Kasztany.png" alt="Kasztany" className="w-12 h-12" />
                         <div>
-                            <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Twój portfel</p>
+                            <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">{t.shop.wallet}</p>
                             <p className="text-3xl font-black text-white leading-none">{userGems}</p>
                         </div>
                     </div>
@@ -96,8 +98,8 @@ const ShopSection: React.FC<ShopSectionProps> = ({ userId, userGems, onPurchaseS
                         </div>
 
                         <div className="flex-1 min-w-0">
-                            <h3 className="font-black text-white truncate">{item.name}</h3>
-                            <p className="text-gray-400 text-xs font-medium leading-snug line-clamp-2">{item.description}</p>
+                            <h3 className="font-black text-white truncate">{t.items[item.id]?.name || item.name}</h3>
+                            <p className="text-gray-400 text-xs font-medium leading-snug line-clamp-2">{t.items[item.id]?.description || item.description}</p>
                         </div>
 
                         <div className="text-right">
@@ -113,7 +115,7 @@ const ShopSection: React.FC<ShopSectionProps> = ({ userId, userGems, onPurchaseS
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                 ) : (
                                     <>
-                                        <span>{item.price}</span>
+                                        <span>{t.shop.buyButton.replace('$1', (item.price || 0).toString())}</span>
                                         <img src="/Kasztany.png" alt="🌰" className="w-4 h-4" />
                                     </>
                                 )}
@@ -125,7 +127,7 @@ const ShopSection: React.FC<ShopSectionProps> = ({ userId, userGems, onPurchaseS
 
             <div className="pt-4 text-center">
                 <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">
-                    Nowe przedmioty wkrótce... 🤫
+                    {t.shop.comingSoon}
                 </p>
             </div>
         </motion.div>

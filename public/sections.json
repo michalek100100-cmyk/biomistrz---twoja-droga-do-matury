@@ -1,0 +1,146 @@
+[
+    {
+        "id": 1,
+        "displayName": "Chemia Życia",
+        "ranges": [
+            [
+                1,
+                220
+            ],
+            [
+                1485,
+                1509
+            ]
+        ]
+    },
+    {
+        "id": 2,
+        "displayName": "Energia i Metabolizm",
+        "ranges": [
+            [
+                221,
+                421
+            ]
+        ]
+    },
+    {
+        "id": 3,
+        "displayName": "Bakterie i archeowce",
+        "ranges": [
+            [
+                423,
+                466
+            ]
+        ]
+    },
+    {
+        "id": 4,
+        "displayName": "Grzyby i porosty",
+        "ranges": [
+            [
+                467,
+                511
+            ]
+        ]
+    },
+    {
+        "id": 5,
+        "displayName": "Protisty",
+        "ranges": [
+            [
+                512,
+                556
+            ]
+        ]
+    },
+    {
+        "id": 6,
+        "displayName": "Rośliny",
+        "ranges": [
+            [
+                557,
+                808
+            ]
+        ]
+    },
+    {
+        "id": 7,
+        "displayName": "Zoologia",
+        "ranges": [
+            [
+                809,
+                838
+            ]
+        ]
+    },
+    {
+        "id": 8,
+        "displayName": "Zwierzęta i Człowiek",
+        "ranges": [
+            [
+                839,
+                1155
+            ]
+        ]
+    },
+    {
+        "id": 9,
+        "displayName": "Wirusy",
+        "ranges": [
+            [
+                1156,
+                1195
+            ]
+        ]
+    },
+    {
+        "id": 10,
+        "displayName": "Genetyka",
+        "ranges": [
+            [
+                1196,
+                1310
+            ]
+        ]
+    },
+    {
+        "id": 11,
+        "displayName": "Biotechnologia",
+        "ranges": [
+            [
+                1311,
+                1360
+            ]
+        ]
+    },
+    {
+        "id": 12,
+        "displayName": "Ewolucjonizm",
+        "ranges": [
+            [
+                1361,
+                1395
+            ]
+        ]
+    },
+    {
+        "id": 13,
+        "displayName": "Ekologia",
+        "ranges": [
+            [
+                1396,
+                1450
+            ]
+        ]
+    },
+    {
+        "id": 14,
+        "displayName": "Komórka",
+        "ranges": [
+            [
+                1451,
+                1484
+            ]
+        ]
+    }
+]

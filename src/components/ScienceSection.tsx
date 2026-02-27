@@ -4,7 +4,12 @@ import {
   Zap, X, Play, Pause, Gauge
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SCIENCE_ARTICLES } from '../data/ScienceData';
+import { SCIENCE_ARTICLES as SCIENCE_ARTICLES_PL } from '../data/ScienceData_PL';
+import { SCIENCE_ARTICLES as SCIENCE_ARTICLES_EN } from '../data/ScienceData_EN';
+import { SCIENCE_ARTICLES as SCIENCE_ARTICLES_ES } from '../data/ScienceData_ES';
+import { SCIENCE_ARTICLES as SCIENCE_ARTICLES_CH } from '../data/ScienceData_CH';
+import { SCIENCE_ARTICLES as SCIENCE_ARTICLES_DE } from '../data/ScienceData_DE';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // --- FORMATOWANIE TEKSTU (LaTeX + BOLD + NEWLINES) ---
 const FormattedText: React.FC<{ text: string }> = ({ text }) => {
@@ -100,6 +105,35 @@ interface ScienceSectionProps {
 }
 
 const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, onBack }) => {
+  const { t, language } = useLanguage();
+  const SCIENCE_ARTICLES = useMemo(() => {
+    switch (language) {
+      case 'en': return SCIENCE_ARTICLES_EN;
+      case 'es': return SCIENCE_ARTICLES_ES;
+      case 'ch': return SCIENCE_ARTICLES_CH;
+      case 'de': return SCIENCE_ARTICLES_DE;
+      default: return SCIENCE_ARTICLES_PL;
+    }
+  }, [language]);
+
+  const articles = useMemo(() => {
+    // 1. Direct lookup
+    if (SCIENCE_ARTICLES[topicId]) return SCIENCE_ARTICLES[topicId];
+
+    // 2. Cross-language lookup (if topicId is Polish but language is EN/ES/CH or vice versa)
+    // We try to find the key by comparing the "base" part of the ID (ignoring the translated part)
+    const topicKeys = Object.keys(SCIENCE_ARTICLES);
+
+    // Try to find a key that ends with the same index/suffix
+    const suffixCandidate = topicId.includes('_') ? topicId.substring(topicId.lastIndexOf('_')) : null;
+    if (suffixCandidate) {
+      const match = topicKeys.find(k => k.endsWith(suffixCandidate) && k.split('_').length === topicId.split('_').length);
+      if (match) return SCIENCE_ARTICLES[match];
+    }
+
+    return undefined;
+  }, [SCIENCE_ARTICLES, topicId]);
+
   const [currentArticleIndex, setCurrentArticleIndex] = useState(0);
   const [quizAnswered, setQuizAnswered] = useState<number | null>(null);
 
@@ -109,10 +143,9 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
   const [rsvpIndex, setRsvpIndex] = useState(0);
   const [wpm, setWpm] = useState(350);
 
-  const articles = SCIENCE_ARTICLES[topicId];
   const currentArticle = articles ? articles[currentArticleIndex] : null;
 
-  const rsvpWords = useMemo(() => isUltraMode ? prepareWordsForRSVP(articles) : [], [articles, isUltraMode]);
+  const rsvpWords = useMemo(() => (isUltraMode && articles) ? prepareWordsForRSVP(articles) : [], [articles, isUltraMode]);
 
   useEffect(() => {
     setQuizAnswered(null);
@@ -148,7 +181,7 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
           <ChevronLeft className="w-6 h-6 text-gray-600 " />
         </button>
         <div className="text-center space-y-4">
-          <h2 className="text-2xl font-black text-gray-800 ">Jeszcze nie zdążyłem stworzyć tego tematu! za niedługo będzie ☺️</h2>
+          <h2 className="text-2xl font-black text-gray-800 ">{t.science.errorNotFound}</h2>
         </div>
       </div>
     );
@@ -198,19 +231,18 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
             <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(34,197,94,0.6)] animate-pulse">
               <Zap className="w-12 h-12 text-black fill-current" />
             </div>
-            <h2 className="text-4xl font-black tracking-tight">Ultra Uczenie</h2>
+            <h2 className="text-4xl font-black tracking-tight">{t.science.ultraMode.title}</h2>
             <p className="text-gray-400 text-lg">
-              Wszystkie artykuły z tego tematu zostaną wyświetlone w technologii RSVP.
-              Skup wzrok na <span className="text-red-500 font-bold">czerwonej literze</span>.
+              {t.science.ultraMode.introDesc}
             </p>
             <button
               onClick={() => setRsvpPlaying(true)}
               className="px-10 py-4 bg-white text-black text-xl font-black rounded-2xl hover:scale-105 transition-transform shadow-xl"
             >
-              ZACZNIJ
+              {t.science.ultraMode.startButton}
             </button>
             <div className="text-sm text-gray-500 font-mono">
-              Słów do przeczytania: {rsvpWords.length} • Szacowany czas: {Math.ceil(rsvpWords.length / wpm)} min
+              {t.science.ultraMode.statsWords} {rsvpWords.length} • {t.science.ultraMode.statsTime} {Math.ceil(rsvpWords.length / wpm)} min
             </div>
           </motion.div>
         ) : (
@@ -288,7 +320,7 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
                   </div>
                   {isHighSpeed && (
                     <span className="text-[10px] uppercase font-black tracking-widest animate-pulse flex items-center gap-1">
-                      <Gauge className="w-3 h-3" /> Strefa Prędkości
+                      <Gauge className="w-3 h-3" /> {t.science.ultraMode.speedZone}
                     </span>
                   )}
                 </div>
@@ -298,9 +330,9 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
             {!rsvpPlaying && rsvpIndex >= rsvpWords.length && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center space-y-6 z-50">
                 <CheckCircle2 className="w-20 h-20 text-green-500" />
-                <h3 className="text-3xl font-black">Trening zakończony!</h3>
+                <h3 className="text-3xl font-black">{t.science.ultraMode.finishedTitle}</h3>
                 <button onClick={() => setIsUltraMode(false)} className="px-8 py-3 bg-white text-black font-bold rounded-xl">
-                  Wróć do lekcji
+                  {t.science.ultraMode.returnButton}
                 </button>
               </motion.div>
             )}
@@ -329,7 +361,7 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
         <div className="flex-1 px-4">
           <div className="flex justify-center mb-1">
             <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">
-              Część {currentArticleIndex + 1} z {articles.length}
+              {t.science.header.part} {currentArticleIndex + 1} {t.science.header.of} {articles.length}
             </span>
           </div>
           <div className="h-1.5 w-full max-w-[150px] mx-auto bg-gray-100  rounded-full overflow-hidden">
@@ -345,7 +377,7 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
         <button
           onClick={() => setIsUltraMode(true)}
           className="p-2 bg-green-100  text-green-600  rounded-full hover:scale-110 transition-transform animate-pulse"
-          title="Tryb Ultra Uczenia"
+          title={t.science.header.ultraModeTitle}
         >
           <Zap className="w-6 h-6 fill-current" />
         </button>
@@ -368,7 +400,7 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
                 {currentArticle!.title}
               </h1>
               <div className="flex items-center gap-2 text-sm font-bold text-gray-400">
-                <BookOpen className="w-4 h-4" /> Temat główny: {topicTitle}
+                <BookOpen className="w-4 h-4" /> {t.science.mainTopic} {topicTitle}
               </div>
             </div>
 
@@ -398,7 +430,7 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 bg-gray-100 ">
                   <VideoOff className="w-12 h-12 mb-2 opacity-50" />
-                  <span className="font-bold text-sm">Jeszcze nie zdążyłem zrobić video 😭</span>
+                  <span className="font-bold text-sm">{t.science.noVideo}</span>
                 </div>
               )}
             </div>
@@ -414,7 +446,7 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
                     <div key={idx} className="bg-blue-50  p-6 rounded-2xl border border-blue-100  flex gap-4 my-6">
                       <Lightbulb className="w-8 h-8 text-blue-500 shrink-0" />
                       <div>
-                        <h4 className="font-black text-blue-700  text-xs uppercase tracking-widest mb-1">Wskazówka BioMistrza</h4>
+                        <h4 className="font-black text-blue-700  text-xs uppercase tracking-widest mb-1">{t.science.tipTitle}</h4>
                         <p className="text-blue-900  font-medium text-base"><FormattedText text={block.value} /></p>
                       </div>
                     </div>
@@ -428,7 +460,7 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
             {currentArticle!.miniQuiz && (
               <div className="mt-12 pt-8 border-t-2 border-gray-100 ">
                 <h3 className="text-xl font-black text-gray-800  mb-6 flex items-center gap-2">
-                  <CheckCircle2 className="w-6 h-6 text-green-500" /> Sprawdź, czy rozumiesz
+                  <CheckCircle2 className="w-6 h-6 text-green-500" /> {t.science.quizTitle}
                 </h3>
                 <div className="bg-gray-50  p-6 rounded-3xl space-y-4 shadow-sm border border-gray-100 ">
                   <p className="font-bold text-lg text-gray-800 "><FormattedText text={currentArticle!.miniQuiz!.question} /></p>
@@ -452,7 +484,7 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
                   <AnimatePresence>
                     {quizAnswered === currentArticle!.miniQuiz!.correctIndex && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-4 bg-green-100  text-green-800  rounded-xl text-center font-bold text-sm">
-                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="w-4 h-4" /> Świetnie!</span>
+                        <span className="flex items-center justify-center gap-2"><CheckCircle2 className="w-4 h-4" /> {t.science.quizSuccess}</span>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -471,7 +503,7 @@ const ScienceSection: React.FC<ScienceSectionProps> = ({ topicId, topicTitle, on
           </button>
         )}
         <button onClick={handleNext} className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 ${currentArticleIndex === articles.length - 1 ? 'bg-green-600 hover:bg-green-500 text-white shadow-green-200/50' : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-200/50'}`}>
-          {currentArticleIndex === articles.length - 1 ? 'Zakończ naukę' : 'Następna część'} <ArrowRight className="w-5 h-5" />
+          {currentArticleIndex === articles.length - 1 ? t.science.finishButton : t.science.nextButton} <ArrowRight className="w-5 h-5" />
         </button>
       </div>
     </div>

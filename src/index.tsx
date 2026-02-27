@@ -7,6 +7,7 @@ import App from './App';
 // Providers
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 // Error Boundary
 import ErrorBoundary from './components/ErrorBoundary';
@@ -22,7 +23,9 @@ root.render(
     <ErrorBoundary>
       <AuthProvider>
         <NotificationProvider>
-          <App />
+          <LanguageProvider>
+            <App />
+          </LanguageProvider>
         </NotificationProvider>
       </AuthProvider>
     </ErrorBoundary>

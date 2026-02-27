@@ -1,9 +1,9 @@
 // src/firebaseConfig.ts
 import { initializeApp } from "firebase/app";
 import { initializeAuth, indexedDBLocalPersistence } from "firebase/auth";
-import { Firestore, getFirestore, initializeFirestore } from "firebase/firestore";
+import { Firestore, initializeFirestore } from "firebase/firestore";
 import { getDatabase } from "firebase/database"; // <--- NOWY IMPORT
-import { Capacitor } from "@capacitor/core";
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyARqb5dClJzZPdVSDRQXQl5MO9q2Ewz9UI",
@@ -23,11 +23,9 @@ export const auth = initializeAuth(app, {
 });
 
 // Standardowy Firestore
-export const db: Firestore = Capacitor.isNativePlatform()
-  ? initializeFirestore(app, {
-    experimentalForceLongPolling: true,
-  })
-  : getFirestore(app);
+export const db: Firestore = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
 
 // NOWA BAZA: Realtime Database
 export const rtdb = getDatabase(app, firebaseConfig.databaseURL);

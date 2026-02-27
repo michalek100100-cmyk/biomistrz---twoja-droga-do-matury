@@ -14,6 +14,17 @@ import {
     TopPlayer
 } from '../services/rankingService';
 
+const getFlagEmoji = (countryCode?: string) => {
+    if (!countryCode) return '';
+    const countries: Record<string, string> = {
+        'PL': '🇵🇱', 'US': '🇺🇸', 'GB': '🇬🇧', 'DE': '🇩🇪',
+        'ES': '🇪🇸', 'CZ': '🇨🇿', 'CN': '🇨🇳', 'JP': '🇯🇵',
+        'FR': '🇫🇷', 'IT': '🇮🇹', 'BR': '🇧🇷', 'UA': '🇺🇦',
+        'OTHER': '🌍'
+    };
+    return countries[countryCode] || '';
+};
+
 interface RankingSectionProps {
     userId: string;
     onStartMatch?: () => void;
@@ -117,11 +128,18 @@ const RankingSection: React.FC<RankingSectionProps> = ({ userId, onStartMatch })
                                     className="relative"
                                 >
                                     {topPlayers[1]?.avatar ? (
-                                        <img
-                                            src={topPlayers[1].avatar}
-                                            alt={topPlayers[1].username}
-                                            className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-gray-400 object-cover"
-                                        />
+                                        <>
+                                            <img
+                                                src={topPlayers[1].avatar}
+                                                alt={topPlayers[1].username}
+                                                className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-gray-400 object-cover"
+                                            />
+                                            {topPlayers[1]?.country && (
+                                                <div className="absolute -bottom-1 -right-1 text-xl drop-shadow-sm">
+                                                    {getFlagEmoji(topPlayers[1].country)}
+                                                </div>
+                                            )}
+                                        </>
                                     ) : (
                                         <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-gray-400 bg-gray-500 flex items-center justify-center text-2xl">
                                             🥈
@@ -142,11 +160,18 @@ const RankingSection: React.FC<RankingSectionProps> = ({ userId, onStartMatch })
                                     className="relative"
                                 >
                                     {topPlayers[0]?.avatar ? (
-                                        <img
-                                            src={topPlayers[0].avatar}
-                                            alt={topPlayers[0].username}
-                                            className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-yellow-400 object-cover shadow-lg"
-                                        />
+                                        <>
+                                            <img
+                                                src={topPlayers[0].avatar}
+                                                alt={topPlayers[0].username}
+                                                className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-yellow-400 object-cover shadow-lg"
+                                            />
+                                            {topPlayers[0]?.country && (
+                                                <div className="absolute -bottom-1 -right-1 text-2xl drop-shadow-sm">
+                                                    {getFlagEmoji(topPlayers[0].country)}
+                                                </div>
+                                            )}
+                                        </>
                                     ) : (
                                         <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-4 border-yellow-400 bg-yellow-500 flex items-center justify-center text-3xl shadow-lg">
                                             🥇
@@ -167,11 +192,18 @@ const RankingSection: React.FC<RankingSectionProps> = ({ userId, onStartMatch })
                                     className="relative"
                                 >
                                     {topPlayers[2]?.avatar ? (
-                                        <img
-                                            src={topPlayers[2].avatar}
-                                            alt={topPlayers[2].username}
-                                            className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-orange-600 object-cover"
-                                        />
+                                        <>
+                                            <img
+                                                src={topPlayers[2].avatar}
+                                                alt={topPlayers[2].username}
+                                                className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-orange-600 object-cover"
+                                            />
+                                            {topPlayers[2]?.country && (
+                                                <div className="absolute -bottom-1 -right-1 text-xl drop-shadow-sm">
+                                                    {getFlagEmoji(topPlayers[2].country)}
+                                                </div>
+                                            )}
+                                        </>
                                     ) : (
                                         <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-orange-600 bg-orange-500 flex items-center justify-center text-2xl">
                                             🥉
@@ -207,8 +239,8 @@ const RankingSection: React.FC<RankingSectionProps> = ({ userId, onStartMatch })
                                 Podium
                             </motion.h3>
                         </div>
-                    </div>
-                </div>
+                    </div >
+                </div >
             )}
 
             {/* Main Rank Card */}
@@ -291,22 +323,24 @@ const RankingSection: React.FC<RankingSectionProps> = ({ userId, onStartMatch })
             </div>
 
             {/* Current Win Streak */}
-            {ranking.winStreak > 0 && (
-                <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-4 flex items-center justify-between"
-                >
-                    <div className="flex items-center gap-3">
-                        <Flame className="w-8 h-8 text-white animate-pulse" />
-                        <div>
-                            <p className="text-white font-black text-lg">Seria zwycięstw!</p>
-                            <p className="text-orange-100 text-sm font-bold">Nie daj się pokonać</p>
+            {
+                ranking.winStreak > 0 && (
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-4 flex items-center justify-between"
+                    >
+                        <div className="flex items-center gap-3">
+                            <Flame className="w-8 h-8 text-white animate-pulse" />
+                            <div>
+                                <p className="text-white font-black text-lg">Seria zwycięstw!</p>
+                                <p className="text-orange-100 text-sm font-bold">Nie daj się pokonać</p>
+                            </div>
                         </div>
-                    </div>
-                    <p className="text-4xl font-black text-white">{ranking.winStreak}</p>
-                </motion.div>
-            )}
+                        <p className="text-4xl font-black text-white">{ranking.winStreak}</p>
+                    </motion.div>
+                )
+            }
 
             {/* Tier Progress List */}
             <div className="space-y-2">
@@ -342,23 +376,25 @@ const RankingSection: React.FC<RankingSectionProps> = ({ userId, onStartMatch })
             </div>
 
             {/* Find Match Button */}
-            {onStartMatch && (
-                <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={onStartMatch}
-                    className="w-full p-5 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl shadow-xl flex items-center justify-center gap-3 text-white font-black text-lg uppercase tracking-wider"
-                >
-                    <Swords className="w-6 h-6" />
-                    Znajdź przeciwnika
-                    <ChevronRight className="w-6 h-6" />
-                </motion.button>
-            )}
+            {
+                onStartMatch && (
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={onStartMatch}
+                        className="w-full p-5 bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl shadow-xl flex items-center justify-center gap-3 text-white font-black text-lg uppercase tracking-wider"
+                    >
+                        <Swords className="w-6 h-6" />
+                        Znajdź przeciwnika
+                        <ChevronRight className="w-6 h-6" />
+                    </motion.button>
+                )
+            }
 
             {/* Season Info */}
             <div className="text-center text-xs text-gray-500 pt-4">
                 <p>Sezon 1 • Rozegrane mecze: {ranking.seasonGames}</p>
             </div>
-        </div>
+        </div >
     );
 };
 

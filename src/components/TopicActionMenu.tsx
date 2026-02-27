@@ -4,6 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, BrainCircuit } from 'lucide-react';
 import { Topic } from '../types';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface TopicActionMenuProps {
     topic: Topic;
@@ -18,6 +19,8 @@ const TopicActionMenu: React.FC<TopicActionMenuProps> = ({
     onStartQuiz,
     onStartLearn
 }) => {
+    const { t } = useLanguage();
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -35,7 +38,7 @@ const TopicActionMenu: React.FC<TopicActionMenuProps> = ({
             >
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-purple-600" />
                 <h2 className="text-2xl font-black text-gray-800  mb-2 text-center">{topic.title}</h2>
-                <p className="text-gray-500  text-center text-sm font-bold mb-8">Wybierz tryb pracy</p>
+                <p className="text-gray-500  text-center text-sm font-bold mb-8">{t.topicActionMenu.subtitle}</p>
 
                 <div className="grid gap-4">
                     <button onClick={onStartLearn} className="flex items-center gap-4 p-4 rounded-2xl bg-blue-50  hover:bg-blue-100  border-2 border-blue-100  transition-all group text-left">
@@ -43,8 +46,8 @@ const TopicActionMenu: React.FC<TopicActionMenuProps> = ({
                             <BookOpen className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="font-black text-blue-900 ">Nauka (Teoria)</h3>
-                            <p className="text-xs text-blue-600  font-bold opacity-70">Artykuły, wideo i przykłady</p>
+                            <h3 className="font-black text-blue-900 ">{t.topicActionMenu.learnTitle}</h3>
+                            <p className="text-xs text-blue-600  font-bold opacity-70">{t.topicActionMenu.learnDesc}</p>
                         </div>
                     </button>
 
@@ -53,14 +56,14 @@ const TopicActionMenu: React.FC<TopicActionMenuProps> = ({
                             <BrainCircuit className="w-6 h-6" />
                         </div>
                         <div>
-                            <h3 className="font-black text-purple-900 ">Ćwiczenia (Quiz)</h3>
-                            <p className="text-xs text-purple-600  font-bold opacity-70">Sprawdź wiedzę w praktyce</p>
+                            <h3 className="font-black text-purple-900 ">{t.topicActionMenu.quizTitle}</h3>
+                            <p className="text-xs text-purple-600  font-bold opacity-70">{t.topicActionMenu.quizDesc}</p>
                         </div>
                     </button>
                 </div>
 
                 <button onClick={onClose} className="mt-8 w-full py-3 rounded-xl font-black text-gray-400  hover:bg-gray-100  transition-colors text-sm uppercase tracking-wider">
-                    Anuluj
+                    {t.common.cancel}
                 </button>
             </motion.div>
         </motion.div>

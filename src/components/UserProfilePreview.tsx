@@ -1,9 +1,10 @@
 // src/components/UserProfilePreview.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Heart, Swords, Zap, Flag } from 'lucide-react';
-import { doc, updateDoc, increment, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, increment, collection, addDoc, serverTimestamp, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebaseConfig';
 import { xpToLevel } from '../services/rankingService';
+import { firebaseLimiter } from '../services/firebaseLimiterService';
 
 interface UserProfilePreviewProps {
     user: {
@@ -30,18 +31,62 @@ const UserProfilePreview: React.FC<UserProfilePreviewProps> = ({ user, onClose, 
     const [reportReason, setReportReason] = useState('');
     const [isReporting, setIsReporting] = useState(false);
     const [reportSuccess, setReportSuccess] = useState(false);
+    const [checkingLike, setCheckingLike] = useState(true);
 
     const level = xpToLevel(user.xp);
 
+    useEffect(() => {
+        const checkExistingLike = async () => {
+            const currentUserId = auth.currentUser?.uid;
+            if (!currentUserId || !user.id || currentUserId === user.id) {
+                setCheckingLike(false);
+                return;
+            }
+
+            try {
+                const likeRef = doc(db, 'users', user.id, 'likers', currentUserId);
+                const likeDoc = await getDoc(likeRef);
+                if (likeDoc.exists()) {
+                    setHasLiked(true);
+                }
+            } catch (error) {
+                console.error("Błąd sprawdzania polubienia:", error);
+            } finally {
+                setCheckingLike(false);
+            }
+        };
+
+        checkExistingLike();
+    }, [user.id]);
+
     const handleLike = async () => {
-        if (hasLiked || isLiking) return;
+        const currentUserId = auth.currentUser?.uid;
+        if (!currentUserId || hasLiked || isLiking || currentUserId === user.id) return;
 
         setIsLiking(true);
         try {
+            const canProceed = await firebaseLimiter.canWrite(currentUserId);
+            if (!canProceed) {
+                alert("Przekroczono limit aktywności na dziś (1000 akcji). Spróbuj ponownie jutro! 🛑");
+                setIsLiking(false);
+                return;
+            }
+
             const userRef = doc(db, 'users', user.id);
-            await updateDoc(userRef, {
-                'likes': increment(1)
-            });
+            const likeRef = doc(db, 'users', user.id, 'likers', currentUserId);
+
+            await Promise.all([
+                updateDoc(userRef, {
+                    'likes': increment(1)
+                }),
+                setDoc(likeRef, {
+                    timestamp: serverTimestamp(),
+                    likerId: currentUserId
+                })
+            ]);
+
+            await firebaseLimiter.recordWrite(currentUserId);
+
             const newLikes = (likes || 0) + 1;
             setLikes(newLikes);
             setHasLiked(true);
@@ -154,10 +199,12 @@ const UserProfilePreview: React.FC<UserProfilePreviewProps> = ({ user, onClose, 
                     <div className="mt-8 flex gap-3">
                         <button
                             onClick={handleLike}
-                            disabled={hasLiked || isLiking}
+                            disabled={hasLiked || isLiking || checkingLike || auth.currentUser?.uid === user.id}
                             className={`flex-1 py-4 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 ${hasLiked
                                 ? 'bg-red-500 text-white cursor-default'
-                                : 'bg-white  border-2 border-red-500 text-red-500 hover:bg-red-50 '
+                                : (checkingLike || auth.currentUser?.uid === user.id)
+                                    ? 'bg-stone-100 text-stone-400 cursor-not-allowed border-2 border-stone-200'
+                                    : 'bg-white  border-2 border-red-500 text-red-500 hover:bg-red-50 '
                                 }`}
                         >
                             <Heart className={`w-5 h-5 ${hasLiked ? 'fill-white' : ''}`} />

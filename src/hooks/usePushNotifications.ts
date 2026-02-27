@@ -1,6 +1,7 @@
 // src/hooks/usePushNotifications.ts
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import {
     isPushSupported,
     registerForPushNotifications,
@@ -36,6 +37,7 @@ interface ReminderOptions {
  */
 export const usePushNotifications = (): UsePushNotificationsReturn => {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [isRegistered, setIsRegistered] = useState(false);
     const [fcmToken, setFcmToken] = useState<string | null>(null);
 
@@ -94,17 +96,26 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
 
         // Planuj nowe
         if (srsTopicCount && srsTopicCount > 0) {
-            await scheduleSRSReminder(srsTopicCount);
+            const body = srsTopicCount === 1
+                ? t.notifications.srsBodySingle
+                : t.notifications.srsBodyMultiple.replace('$1', srsTopicCount.toString());
+
+            await scheduleSRSReminder(srsTopicCount, t.notifications.srsTitle, body);
         }
 
         if (currentStreak !== undefined) {
-            await scheduleStreakReminder(currentStreak);
+            const body = currentStreak > 0
+                ? t.notifications.streakBody.replace('$1', currentStreak.toString())
+                : t.notifications.streakEmpty;
+
+            await scheduleStreakReminder(currentStreak, t.notifications.streakTitle, body);
         }
 
         if (remainingXP && remainingXP > 0) {
-            await scheduleDailyGoalReminder(remainingXP);
+            const body = t.notifications.dailyGoalBody.replace('$1', remainingXP.toString());
+            await scheduleDailyGoalReminder(remainingXP, t.notifications.dailyGoalTitle, body);
         }
-    }, [isSupported]);
+    }, [isSupported, t]);
 
     /**
      * Pokazuje natychmiastowe powiadomienie

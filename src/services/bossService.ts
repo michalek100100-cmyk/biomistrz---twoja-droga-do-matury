@@ -20,19 +20,19 @@ export const spawnClanBossIfNeeded = async (clanId: string): Promise<ClanBoss | 
         }
 
         // Spawn a new boss (valid for 24 hours)
-        const bossNames = ["Zmutowany Wirus", "Bestia z Czarnobyla", "Goliat Botaniczny", "Król Grzybów"];
+        const bossKeys = ["virus", "beast", "goliath", "king"];
         const emojis = ["🦠", "🐉", "🌿", "🍄"];
-        const rIndex = Math.floor(Math.random() * bossNames.length);
+        const rIndex = Math.floor(Math.random() * bossKeys.length);
 
         const newBoss: ClanBoss = {
             id: `boss_${Date.now()}`,
-            name: bossNames[rIndex],
+            name: bossKeys[rIndex],
             avatar: emojis[rIndex],
             maxHp: 20000,
             currentHp: 20000,
             activeUntil: now + 24 * 60 * 60 * 1000, // 24 hours
             participants: {},
-            rewards: { gems: 500, elo: 50, loot: 'Skrzynia Bohatera' }
+            rewards: { gems: 500, elo: 50, loot: 'hero_chest' }
         };
 
         await setDoc(ref, newBoss);

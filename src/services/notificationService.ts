@@ -161,6 +161,8 @@ export const requestWebNotificationPermission = async (): Promise<boolean> => {
  */
 export const scheduleSRSReminder = async (
     topicCount: number,
+    title?: string,
+    body?: string,
     scheduledTime?: Date
 ): Promise<number | null> => {
     if (!isPushSupported()) return null;
@@ -172,10 +174,10 @@ export const scheduleSRSReminder = async (
         await LocalNotifications.schedule({
             notifications: [{
                 id: notificationId,
-                title: '📚 Czas na powtórkę!',
-                body: topicCount === 1
+                title: title || '📚 Czas na powtórkę!',
+                body: body || (topicCount === 1
                     ? '1 temat czeka na powtórzenie. Nie pozwól mu umknąć!'
-                    : `${topicCount} tematów czeka na powtórzenie. Zacznij teraz!`,
+                    : `${topicCount} tematów czeka na powtórzenie. Zacznij teraz!`),
                 schedule: { at: scheduleAt },
                 channelId: NOTIFICATION_CHANNEL_ID,
                 extra: { category: 'srs_reminder', topicCount }
@@ -194,7 +196,9 @@ export const scheduleSRSReminder = async (
  * Planuje przypomnienie o serii (streak)
  */
 export const scheduleStreakReminder = async (
-    currentStreak: number
+    currentStreak: number,
+    title?: string,
+    body?: string
 ): Promise<number | null> => {
     if (!isPushSupported()) return null;
 
@@ -205,10 +209,10 @@ export const scheduleStreakReminder = async (
         await LocalNotifications.schedule({
             notifications: [{
                 id: notificationId,
-                title: '🔥 Twoja seria jest zagrożona!',
-                body: currentStreak > 0
+                title: title || '🔥 Twoja seria jest zagrożona!',
+                body: body || (currentStreak > 0
                     ? `Masz ${currentStreak}-dniową serię! Odpowiedz na kilka pytań, żeby jej nie stracić.`
-                    : 'Zacznij nową serię nauki już dziś!',
+                    : 'Zacznij nową serię nauki już dziś!'),
                 schedule: { at: scheduleAt },
                 channelId: NOTIFICATION_CHANNEL_ID,
                 extra: { category: 'streak_warning', streak: currentStreak }
@@ -227,7 +231,9 @@ export const scheduleStreakReminder = async (
  * Planuje przypomnienie o dziennym celu
  */
 export const scheduleDailyGoalReminder = async (
-    remainingXP: number
+    remainingXP: number,
+    title?: string,
+    body?: string
 ): Promise<number | null> => {
     if (!isPushSupported() || remainingXP <= 0) return null;
 
@@ -238,8 +244,8 @@ export const scheduleDailyGoalReminder = async (
         await LocalNotifications.schedule({
             notifications: [{
                 id: notificationId,
-                title: '🎯 Dzienny cel!',
-                body: `Zostało Ci jeszcze ${remainingXP} XP do celu. Dasz radę!`,
+                title: title || '🎯 Dzienny cel!',
+                body: body || `Zostało Ci jeszcze ${remainingXP} XP do celu. Dasz radę!`,
                 schedule: { at: scheduleAt },
                 channelId: NOTIFICATION_CHANNEL_ID,
                 extra: { category: 'daily_goal', remainingXP }

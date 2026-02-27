@@ -9,13 +9,14 @@ import HomePage from './components/HomePage';
 import LessonMap from './components/LessonMap';
 import QuizSession from './components/QuizSession';
 import ExamSection from './components/ExamSection';
-import StudyHelpSection from './components/StudyHelpSection';
+import PracticeHub from './components/PracticeHub';
 import CreatorSection from './components/CreatorSection';
 import ProfileSection from './components/ProfileSection';
 import BugReportButton from './components/BugReportButton';
 import FeedbackSection from './components/FeedbackSection';
 import IntroScreen from './screens/IntroScreen';
 import AuthScreen from './screens/AuthScreen';
+import LanguageSelectScreen from './screens/LanguageSelectScreen';
 import LeaderboardSection from './components/LeaderboardSection';
 import FriendsSection from './components/FriendsSection';
 import ScienceSection from './components/ScienceSection';
@@ -28,12 +29,14 @@ import ShopSection from './components/ShopSection';
 import InventoryModal from './components/InventoryModal';
 import LevelRewardModal from './components/LevelRewardModal';
 import ChestOpeningModal from './components/ChestOpeningModal';
+import SupportSection from './components/SupportSection';
 
 import CalendarSection from './components/CalendarSection';
 import AddToCalendarPrompt from './components/AddToCalendarPrompt';
 import DailyReminderPopup from './components/DailyReminderPopup';
 import Notification, { NotificationType } from './components/Notification';
 import MatchmakingScreen from './components/MatchmakingScreen';
+import { useLanguage } from './contexts/LanguageContext';
 import InvitePendingPopup from './components/InvitePendingPopup';
 import IncomingInvitePopup from './components/IncomingInvitePopup';
 import FriendRequestPopup from './components/FriendRequestPopup';
@@ -48,7 +51,7 @@ import { getUnclaimedMilestones } from './services/levelRewardService';
 import { xpToLevel } from './services/rankingService';
 
 // --- TYPY I SERWISY ---
-import { UserStats, Unit, Topic, ItemRarity } from './types';
+import { UserStats, Unit, Topic, ItemRarity, Question } from './types';
 import { calculateNextReview, isReviewDue } from './services/srsService';
 import { showInstantNotification, requestWebNotificationPermission } from './services/notificationService';
 import { checkAchievements } from './services/achievementService';
@@ -64,7 +67,7 @@ import { wasEmergencyRefresh, clearEmergencySave } from './services/emergencySav
 import OfflineIndicator from './components/OfflineIndicator';
 
 // --- IKONY ---
-import { ChevronLeft, RefreshCw, Play, Users, Timer } from 'lucide-react';
+import { ChevronLeft, Timer, Sparkles } from 'lucide-react';
 
 // --- FIREBASE ---
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -85,7 +88,8 @@ const INITIAL_STATS: UserStats = {
   dailyQuestionsAnswered: 0,
   dailyGoalCompleted: false,
   lastQuestionDate: '',
-  lastGoalCompletedAt: 0
+  lastGoalCompletedAt: 0,
+  supportValue: 0
 };
 
 
@@ -93,6 +97,7 @@ const INITIAL_STATS: UserStats = {
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState('home');
+  const { t } = useLanguage();
   const [contentRefreshKey, setContentRefreshKey] = useState(0);
 
   // Pomodoro timer – lives here so it persists across tab navigation
@@ -191,6 +196,11 @@ const App: React.FC = () => {
   const [showIntro, setShowIntro] = useState<boolean>(false);
   const [introChecked, setIntroChecked] = useState<boolean>(false);
 
+  // Language selection: show if user hasn't chosen a language yet
+  const [showLanguageSelect, setShowLanguageSelect] = useState<boolean>(
+    () => localStorage.getItem('hasSelectedLanguage') !== 'true'
+  );
+
   // Version check state
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [showUpdateScreen, setShowUpdateScreen] = useState(false);
@@ -206,7 +216,8 @@ const App: React.FC = () => {
   }, []);
 
   // Use data loader hook for questions/units
-  const { units, setUnits, dataLoading, subject, setSubject } = useDataLoader();
+  // Use data loader hook for questions/units
+  const { units, setUnits, dataLoading, subject, setSubject, chemistryNotTranslated } = useDataLoader();
 
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
 
@@ -296,14 +307,14 @@ const App: React.FC = () => {
         // Wyślij powiadomienie przeglądarkowe
         if (dueTopics.length === 1) {
           showInstantNotification(
-            '📚 Czas na powtórkę!',
-            `Powtórz "${dueTopics[0].title}" a zapamiętasz 500 % lepiej!!`,
+            t.common.reviewReminderTitle,
+            t.common.reviewReminderSingle.replace('$1', dueTopics[0].title),
             'srs_reminder'
           );
         } else {
           showInstantNotification(
-            '📚 Czas na powtórki!',
-            `Masz ${dueTopics.length} tematów do powtórzenia.Zrób to teraz, a zapamiętasz 500 % lepiej!!`,
+            t.common.reviewReminderTitle,
+            t.common.reviewReminderMultiple.replace('$1', dueTopics.length.toString()),
             'srs_reminder'
           );
         }
@@ -377,7 +388,7 @@ const App: React.FC = () => {
               if (newlyUnlocked.length > 0) {
                 setTimeout(() => {
                   newlyUnlocked.forEach(ach => {
-                    showNotification(`Odblokowano osiągnięcie: ${ach.name} ! 🎉`, 'success');
+                    showNotification(t.achievements.unlocked.replace('$1', t.achievements.items[ach.id]?.name || ach.name), 'success');
                   });
                 }, 2000);
               }
@@ -392,6 +403,19 @@ const App: React.FC = () => {
               if (local.name && local.name !== 'BioMistrz') currentStats.name = local.name;
               if (local.bio) currentStats.bio = local.bio;
               if (local.avatar) currentStats.avatar = local.avatar;
+            }
+
+            // Sync country and language from onboarding if not already in stats
+            const savedCountry = localStorage.getItem('app_country');
+            if (savedCountry && !currentStats.country) {
+              currentStats.country = savedCountry;
+            } else if (!currentStats.country) {
+              // Default to PL for legacy users or those who skipped selection
+              currentStats.country = 'PL';
+            }
+            const savedLang = localStorage.getItem('app_language');
+            if (savedLang && !currentStats.language) {
+              currentStats.language = savedLang;
             }
 
             setStats(currentStats);
@@ -409,6 +433,34 @@ const App: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
+  // --- HELPER: Resolve question IDs to full Question objects from local units ---
+  // Used for cross-language 1v1 — each player resolves the same IDs in their own language
+  const resolveQuestionsFromIds = (ids: number[]): Question[] => {
+    const idSet = new Set(ids);
+    const idOrder = new Map(ids.map((id, idx) => [id, idx]));
+    const resolved: Question[] = [];
+
+    units.forEach(unit => {
+      unit.topics.forEach(topic => {
+        topic.questions.forEach(q => {
+          const numId = typeof q.id === 'number' ? q.id : parseFloat(q.id as any);
+          if (idSet.has(numId)) {
+            resolved.push({ ...q, topicName: topic.title });
+          }
+        });
+      });
+    });
+
+    // Preserve the original random order chosen by the host
+    resolved.sort((a, b) => {
+      const aId = typeof a.id === 'number' ? a.id : parseFloat(a.id as any);
+      const bId = typeof b.id === 'number' ? b.id : parseFloat(b.id as any);
+      return (idOrder.get(aId) ?? 0) - (idOrder.get(bId) ?? 0);
+    });
+
+    return resolved;
+  };
+
   // --- NASŁUCHIWANIE NA START GRY ---
   useEffect(() => {
     if (!currentLobbyId) return;
@@ -421,7 +473,7 @@ const App: React.FC = () => {
 
         // Jeśli gra wystartowała, a my jeszcze o tym nie wiemy (w tym listenerze)
         if (data.status === 'GAME' && !isStarting) {
-          isStarting = true; // Flaga lokalna zapobiegająca wielokrotnemu logowaniu w jednym cyklu życia listenera
+          isStarting = true;
           console.log("🎮 Wykryto status GAME dla lobby:", currentLobbyId, "Typ:", data.type, "PIN:", data.pin);
 
           // JEŚLI TO 1v1 LUB KALAMBURY (Matchmaking - bez PINu) I NIE MAMY JESZCZE FLAGI matchFound -> POKAŻ EKRAN "OPPONENT FOUND"
@@ -442,7 +494,17 @@ const App: React.FC = () => {
                 setMatchFound(false);
                 setOpponentData(null);
                 console.log("🚀 Gra startuje po animacji!");
-                if (data.gameQuestions) setMultiplayerQuestions(data.gameQuestions);
+
+                // 1v1: resolve question IDs locally (each player sees their own language)
+                if (data.type === '1v1' && data.gameQuestionIds?.length) {
+                  const localQuestions = resolveQuestionsFromIds(data.gameQuestionIds);
+                  console.log(`🌐 Rozwiązano ${localQuestions.length}/${data.gameQuestionIds.length} pytań lokalnie`);
+                  setMultiplayerQuestions(localQuestions);
+                } else if (data.gameQuestions) {
+                  // Fallback: old format or charades
+                  setMultiplayerQuestions(data.gameQuestions);
+                }
+
                 if (data.timePerQuestion) setMultiplayerTimePerQuestion(data.timePerQuestion);
                 setIsMultiplayerGameActive(true);
               }, 3500);
@@ -501,7 +563,7 @@ const App: React.FC = () => {
   // Check for emergency refresh and show notification
   useEffect(() => {
     if (wasEmergencyRefresh()) {
-      showNotification('Aplikacja została odświeżona z powodu problemów z wydajnością.', 'info');
+      showNotification(t.common.emergencyRefresh, 'info');
       clearEmergencySave();
     }
   }, []);
@@ -591,7 +653,7 @@ const App: React.FC = () => {
       if (newlyUnlocked.length > 0) {
         setStats(newStats);
         newlyUnlocked.forEach(ach => {
-          showNotification(`Odblokowano osiągnięcie: ${ach.name} ! 🎉`, 'success');
+          showNotification(t.achievements.unlocked.replace('$1', t.achievements.items[ach.id]?.name || ach.name), 'success');
         });
       }
     }
@@ -601,11 +663,12 @@ const App: React.FC = () => {
     return (
       <div className="fixed inset-0 bg-gradient-to-b from-[#f0fdf4] to-[#d7f4d7] flex flex-col items-center justify-center z-[100]">
         <motion.div animate={{ rotate: 360, scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1.5 }} className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full mb-4 shadow-lg" />
-        <h1 className="text-2xl font-black text-blue-600  tracking-tighter">Wczytywanie BioMistrza...</h1>
+        <h1 className="text-2xl font-black text-blue-600  tracking-tighter">{t.common.loadingApp}</h1>
       </div>
     );
   }
 
+  if (showLanguageSelect) return <LanguageSelectScreen onSelect={() => setShowLanguageSelect(false)} />;
   if (!user) return <AuthScreen />;
   if (!introChecked) return null;
   if (showIntro) return <IntroScreen onFinish={() => setShowIntro(false)} userName={stats.name || user.displayName || 'BioMistrzu'} />;
@@ -617,7 +680,7 @@ const App: React.FC = () => {
       gems: (prev.gems || 0) + gems,
       claimedEloRewards: [...(prev.claimedEloRewards || []), milestone]
     }));
-    showNotification(`+ ${gems} 🌰 kasztanów za ${milestone} ELO!`, 'success');
+    showNotification(t.common.eloReward.replace('$1', gems.toString()).replace('$2', milestone.toString()), 'success');
   };
 
   return (
@@ -743,10 +806,10 @@ const App: React.FC = () => {
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             onClick={() => handleTabChange('studyhelp')}
             className={`fixed bottom-20 right-4 md:bottom-6 z-[60] flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-xl font-black text-sm text-white transition-all hover:scale-105 active:scale-95 ${pomodoroState.phase === 'work'
-                ? 'bg-gradient-to-r from-green-500 to-emerald-600 shadow-green-300'
-                : pomodoroState.phase === 'longBreak'
-                  ? 'bg-gradient-to-r from-blue-500 to-cyan-500 shadow-blue-300'
-                  : 'bg-gradient-to-r from-orange-400 to-amber-500 shadow-orange-300'
+              ? 'bg-gradient-to-r from-green-500 to-emerald-600 shadow-green-300'
+              : pomodoroState.phase === 'longBreak'
+                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 shadow-blue-300'
+                : 'bg-gradient-to-r from-orange-400 to-amber-500 shadow-orange-300'
               }`}
           >
             {/* Pulse dot */}
@@ -777,7 +840,7 @@ const App: React.FC = () => {
             setPendingInvite(null);
             setCurrentLobbyId(lobbyId);
             setShowMultiplayer(true);
-            showNotification(`Gra ze znajomym ${pendingInvite.friendName} rozpoczęta!`, 'success');
+            showNotification(t.common.gameStarted.replace('$1', pendingInvite.friendName), 'success');
           }}
           onClose={() => setPendingInvite(null)}
         />
@@ -790,7 +853,7 @@ const App: React.FC = () => {
             setIncomingInvite(null);
             setCurrentLobbyId(lobbyId);
             setShowMultiplayer(true);
-            showNotification(`Dołączono do gry z ${incomingInvite.fromUserName} !`, 'success');
+            showNotification(t.common.joinedGame.replace('$1', incomingInvite.fromUserName), 'success');
           }}
           onClose={() => setIncomingInvite(null)}
         />
@@ -836,105 +899,101 @@ const App: React.FC = () => {
                       <div className="flex items-center justify-center gap-3 mb-6">
                         <button
                           onClick={() => setSubject('biology')}
-                          className={`flex - 1 py - 3 px - 6 rounded - 2xl font - black text - sm transition - all ${subject === 'biology'
+                          className={`flex-1 py-3 px-6 rounded-2xl font-black text-sm transition-all ${subject === 'biology'
                             ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg scale-105'
-                            : 'bg-gray-200  text-gray-600  hover:bg-gray-300 '
-                            } `}
+                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                            }`}
                         >
-                          🧬 Biologia
+                          {t.home.subjects.biology}
                         </button>
                         <button
                           onClick={() => setSubject('chemistry')}
-                          className={`flex - 1 py - 3 px - 6 rounded - 2xl font - black text - sm transition - all ${subject === 'chemistry'
+                          className={`flex-1 py-3 px-6 rounded-2xl font-black text-sm transition-all ${subject === 'chemistry'
                             ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg scale-105'
-                            : 'bg-gray-200  text-gray-600  hover:bg-gray-300 '
-                            } `}
+                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                            }`}
                         >
-                          ⚗️ Chemia
+                          {t.home.subjects.chemistry}
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-4">
-                        {units.map((unit, index) => {
-                          const completed = unit.topics.filter(t => t.progress === 100).length;
-                          const total = unit.topics.length;
-                          const progress = total > 0 ? Math.floor((completed / total) * 100) : 0;
-
-                          // Obliczenia dla koła (promień 36 daje obwód ~226)
-                          const CIRCUMFERENCE = 226;
-                          const offset = CIRCUMFERENCE - (progress / 100) * CIRCUMFERENCE;
-
-                          return (
-                            <motion.div
-                              key={unit.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              whileInView={{ opacity: 1, y: 0 }}
-                              viewport={{ once: true }} // Ważne: Animuje się tylko raz przy pojawieniu!
-                              transition={{ delay: index * 0.05 }}
-                              whileHover={{ scale: 1.01 }}
-                              whileTap={{ scale: 0.99 }}
-                              onClick={() => setSelectedUnit(unit)}
-                              className="bg-white  p-5 rounded-[2rem] shadow-sm hover:shadow-xl border border-gray-100  cursor-pointer flex items-center gap-6 transition-all duration-300"
-                            >
-                              {/* Okrągła ikona z STABILNĄ animacją postępu */}
-                              <div className="relative w-20 h-20 flex-shrink-0">
-                                <svg className="w-full h-full transform -rotate-90">
-                                  {/* Tło koła (szare) */}
-                                  <circle
-                                    cx="40" cy="40" r="36"
-                                    stroke="currentColor"
-                                    strokeWidth="6"
-                                    fill="transparent"
-                                    className="text-gray-100 "
-                                  />
-                                  {/* Pasek postępu (Kolorowy) - Animacja Offsetu */}
-                                  <motion.circle
-                                    cx="40" cy="40" r="36"
-                                    stroke="currentColor"
-                                    strokeWidth="6"
-                                    fill="transparent"
-                                    className="text-blue-500"
-                                    strokeLinecap="round"
-                                    strokeDasharray={CIRCUMFERENCE} // Stała długość (cały obwód)
-                                    initial={{ strokeDashoffset: CIRCUMFERENCE }} // Start: Puste
-                                    whileInView={{ strokeDashoffset: offset }}    // Cel: Wypełnione
-                                    viewport={{ once: true }} // Zapobiega miganiu przy szybkim przewijaniu
-                                    transition={{ duration: 1.5, ease: "easeOut" }}
-                                  />
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center text-3xl">
-                                  {unit.icon}
-                                </div>
+                      {chemistryNotTranslated ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="max-w-2xl mx-auto"
+                        >
+                          <div className="p-10 rounded-[3rem] bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 text-white shadow-2xl relative overflow-hidden border-b-[12px] border-purple-800/30">
+                            <div className="relative z-10 flex flex-col items-center text-center">
+                              <div className="bg-white/20 p-5 rounded-[2rem] backdrop-blur-xl mb-8 shadow-inner border border-white/30 animate-pulse">
+                                <Sparkles className="w-12 h-12 text-white" />
                               </div>
+                              <h3 className="text-4xl font-black mb-6 tracking-tight">
+                                {t.home.subjects.chemistry}
+                              </h3>
+                              <p className="text-xl font-bold leading-relaxed opacity-95 max-w-lg">
+                                {t.science.noChemistryMessage}
+                              </p>
+                            </div>
+                            <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-[100px]" />
+                            <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-purple-400/20 rounded-full blur-[100px]" />
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-4">
+                          {units.map((unit, index) => {
+                            const completed = unit.topics.filter(t => t.progress === 100).length;
+                            const total = unit.topics.length;
+                            const progress = total > 0 ? Math.floor((completed / total) * 100) : 0;
+                            const CIRCUMFERENCE = 226;
+                            const offset = CIRCUMFERENCE - (progress / 100) * CIRCUMFERENCE;
 
-                              <div className="flex-1">
-                                <h3 className="text-xl font-black text-gray-800  mb-1">{unit.title}</h3>
-                                <p className="text-sm text-gray-500  font-medium mb-2">{unit.description}</p>
-
-                                <div className="flex items-center gap-2">
-                                  <span className="bg-blue-100  text-blue-700  px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wide">
-                                    Moduł {index + 1}
-                                  </span>
-                                  {progress === 100 && (
-                                    <span className="bg-green-100  text-green-700  px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wide flex items-center gap-1">
-                                      Ukończono
+                            return (
+                              <motion.div
+                                key={unit.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: index * 0.05 }}
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
+                                onClick={() => setSelectedUnit(unit)}
+                                className="bg-white p-5 rounded-[2rem] shadow-sm hover:shadow-xl border border-gray-100 cursor-pointer flex items-center gap-6 transition-all duration-300"
+                              >
+                                <div className="relative w-20 h-20 flex-shrink-0">
+                                  <svg className="w-full h-full transform -rotate-90">
+                                    <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-gray-100" />
+                                    <motion.circle
+                                      cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-blue-500" strokeLinecap="round" strokeDasharray={CIRCUMFERENCE}
+                                      initial={{ strokeDashoffset: CIRCUMFERENCE }}
+                                      whileInView={{ strokeDashoffset: offset }}
+                                      viewport={{ once: true }}
+                                      transition={{ duration: 1.5, ease: "easeOut" }}
+                                    />
+                                  </svg>
+                                  <div className="absolute inset-0 flex items-center justify-center text-3xl">{unit.icon}</div>
+                                </div>
+                                <div className="flex-1">
+                                  <h3 className="text-xl font-black text-gray-800 mb-1">{unit.title}</h3>
+                                  <p className="text-sm text-gray-500 font-medium mb-2">{unit.description}</p>
+                                  <div className="flex items-center gap-2">
+                                    <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wide">
+                                      {t.home.module} {index + 1}
                                     </span>
-                                  )}
+                                    {progress === 100 && <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wide flex items-center gap-1">{t.common.confirm}</span>}
+                                  </div>
                                 </div>
-                              </div>
-
-                              <div className="pr-4 text-gray-300 ">
-                                <ChevronLeft className="w-6 h-6 rotate-180" />
-                              </div>
-                            </motion.div>
-                          );
-                        })}
-                      </div>
+                                <div className="pr-4 text-gray-300"><ChevronLeft className="w-6 h-6 rotate-180" /></div>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div className="space-y-8">
-                      <button onClick={() => setSelectedUnit(null)} className="flex items-center gap-2 text-blue-600  font-black uppercase text-[10px] hover:translate-x-[-2px] transition-transform bg-white  px-5 py-2.5 rounded-full shadow-sm"><ChevronLeft className="w-4 h-4" /> Wróć do Mapy</button>
-                      <motion.div layoutId={`unit - header - ${selectedUnit.id} `} className="bg-gray-800 rounded-[2.5rem] p-10 text-white border-b-[10px] border-blue-600 shadow-xl relative overflow-hidden">
+                      <button onClick={() => setSelectedUnit(null)} className="flex items-center gap-2 text-blue-600 font-black uppercase text-[10px] hover:translate-x-[-2px] transition-transform bg-white px-5 py-2.5 rounded-full shadow-sm"><ChevronLeft className="w-4 h-4" /> {t.common.backToMap}</button>
+                      <motion.div layoutId={`unit-header-${selectedUnit.id}`} className="bg-gray-800 rounded-[2.5rem] p-10 text-white border-b-[10px] border-blue-600 shadow-xl relative overflow-hidden">
                         <div className="flex items-center gap-6 relative z-10">
                           <span className="bg-white/10 p-5 rounded-[1.8rem] backdrop-blur-md text-6xl">{selectedUnit.icon}</span>
                           <div>
@@ -943,202 +1002,173 @@ const App: React.FC = () => {
                           </div>
                         </div>
                       </motion.div>
-
-                      <LessonMap
-                        topics={selectedUnit.topics}
-                        onStartTopic={(topic) => setSelectedTopicForAction(topic)}
-                        onResetTopic={() => { }}
-                      />
+                      <LessonMap topics={selectedUnit.topics} onStartTopic={(topic) => setSelectedTopicForAction(topic)} onResetTopic={() => { }} />
                     </div>
                   )}
                 </motion.div>
               )}
 
               {activeTab === 'practice' && (
-                <div className="max-w-2xl mx-auto py-8">
-                  <h2 className="text-3xl font-black text-gray-800  mb-8 flex items-center gap-3">
-                    <RefreshCw className="w-8 h-8 text-orange-500" /> Centrum Powtórek
-                  </h2>
-
-                  {/* --- SEKCJA ZAPISANYCH ZADAŃ --- */}
-                  {savedQuestions.length > 0 && (
-                    <div className="mb-10">
-                      <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 ml-2">Biblioteka</h3>
-                      <button
-                        onClick={() => {
-                          const allQuestions = units.flatMap(u => u.topics.flatMap(t => t.questions));
-                          const questionsToPlay = allQuestions.filter(q => savedQuestions.includes(q.id));
-
-                          if (questionsToPlay.length === 0) return;
-
-                          setActiveQuizTopic({
-                            id: 'saved_questions_session',
-                            title: 'Zapisane Zadania',
-                            icon: '❤️',
-                            description: 'Twoja osobista kolekcja trudnych pytań',
-                            questions: questionsToPlay,
-                            progress: 0,
-                            srsLevel: 0,
-                            nextReviewDate: undefined
-                          });
-                        }}
-                        className="w-full bg-gradient-to-r from-pink-500 to-rose-600 p-8 rounded-[2.5rem] text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex justify-between items-center group relative overflow-hidden"
-                      >
-                        <div className="relative z-10 flex items-center gap-6">
-                          <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-heart"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5 4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></svg>
-                          </div>
-                          <div className="text-left">
-                            <h4 className="text-2xl font-black text-white">Zapisane Zadania</h4>
-                            <p className="text-pink-100 font-bold opacity-90">{savedQuestions.length} pytań do powtórzenia</p>
-                          </div>
-                        </div>
-                        <Play className="w-12 h-12 text-white opacity-80 group-hover:scale-110 transition-transform relative z-10" />
-                        <div className="absolute -right-10 -bottom-10 bg-white/10 w-40 h-40 rounded-full blur-2xl group-hover:bg-white/20 transition-colors" />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* --- SEKCJA SRS --- */}
-                  <div className="mb-10">
-                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 ml-2">Inteligentne Powtórki (SRS)</h3>
-                    {dueReviews.length === 0 ? (
-                      <div className="bg-white  rounded-[3rem] p-10 text-center border-4 border-dashed border-gray-100 ">
-                        <div className="text-5xl mb-4">🏆</div>
-                        <h3 className="text-lg font-black text-gray-700 ">Brak tematów SRS</h3>
-                        <p className="text-gray-400  text-sm mt-1">Algorytm nie wyznaczył dziś żadnych tematów do powtórki.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {dueReviews.map(topic => (
-                          <button key={topic.id} onClick={() => setActiveQuizTopic(topic)} className="w-full bg-white  p-6 rounded-[2.5rem] border-2 border-gray-50  flex justify-between items-center hover:border-orange-400 transition-all duo-button-shadow">
-                            <div className="flex items-center gap-5">
-                              <span className="text-4xl">{topic.icon}</span>
-                              <div className="text-left">
-                                <h4 className="text-lg font-black text-gray-800 ">{topic.title}</h4>
-                                <p className="text-xs font-bold text-orange-500 uppercase tracking-wide">Wymagana powtórka</p>
-                              </div>
-                            </div>
-                            <Play className="w-8 h-8 text-orange-500" />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* --- PRZYCISK MULTIPLAYER --- */}
-                  <div className="mb-10">
-                    <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4 ml-2">Wspólna Nauka</h3>
-                    <button
-                      onClick={() => setShowMultiplayer(true)}
-                      className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 p-8 rounded-[2.5rem] text-white shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all flex justify-between items-center group relative overflow-hidden"
+                <div className="space-y-8">
+                  {chemistryNotTranslated && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="max-w-2xl mx-auto"
                     >
-                      <div className="relative z-10 flex items-center gap-6">
-                        <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                          <Users className="w-8 h-8 text-white" />
+                      <div className="p-10 rounded-[3rem] bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 text-white shadow-2xl relative overflow-hidden border-b-[12px] border-purple-800/30">
+                        <div className="relative z-10 flex flex-col items-center text-center">
+                          <div className="bg-white/20 p-5 rounded-[2rem] backdrop-blur-xl mb-8 shadow-inner border border-white/30 animate-pulse">
+                            <Sparkles className="w-12 h-12 text-white" />
+                          </div>
+                          <h3 className="text-4xl font-black mb-6 tracking-tight">
+                            {t.home.subjects.chemistry}
+                          </h3>
+                          <p className="text-xl font-bold leading-relaxed opacity-95 max-w-lg">
+                            {t.science.noChemistryMessage}
+                          </p>
                         </div>
-                        <div className="text-left">
-                          <h4 className="text-2xl font-black text-white">Tryb Grupowy</h4>
-                          <p className="text-violet-100 font-bold opacity-90">Rywalizuj na żywo ze znajomymi</p>
-                        </div>
+                        <div className="absolute -right-20 -top-20 w-80 h-80 bg-white/10 rounded-full blur-[100px]" />
+                        <div className="absolute -left-20 -bottom-20 w-80 h-80 bg-purple-400/20 rounded-full blur-[100px]" />
                       </div>
-                    </button>
-                  </div>
+                    </motion.div>
+                  )}
+                  <PracticeHub
+                    pomodoroState={pomodoroState}
+                    pomodoroControls={pomodoroControls}
+                    dueReviews={dueReviews}
+                    savedQuestions={savedQuestions}
+                    units={units}
+                    onStartTopic={(topic) => setActiveQuizTopic(topic)}
+                    onStartSavedQuestions={() => {
+                      const allQuestions = units.flatMap(u => u.topics.flatMap(t => t.questions));
+                      const questionsToPlay = allQuestions.filter(q => savedQuestions.includes(q.id));
+                      if (questionsToPlay.length === 0) return;
+                      setActiveQuizTopic({
+                        id: 'saved_questions_session',
+                        title: t.practiceCenter.savedQuestions,
+                        icon: '❤️',
+                        description: t.practiceCenter.savedQuestionsDesc,
+                        questions: questionsToPlay,
+                        progress: 0,
+                        srsLevel: 0,
+                        nextReviewDate: undefined
+                      });
+                    }}
+                    onStartArena={() => setShowMultiplayer(true)}
+                  />
                 </div>
               )}
-
-              {activeTab === 'exams' && (
-                <ExamSection
-                  onExamFinish={(xp) => {
-                    setStats(p => {
-                      const multi = p.activeBuffs?.find(b => b.type === 'xp_multiplier' && b.expiresAt > Date.now())?.multiplier || 1;
-                      return { ...p, xp: p.xp + Math.round(xp * multi), gems: p.gems + 5 };
-                    });
-                    recordDailyQuestions(1);
-                  }}
-                />
-              )}
-
-              {activeTab === 'studyhelp' && (
-                <motion.div key="studyhelp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  <StudyHelpSection pomodoroState={pomodoroState} pomodoroControls={pomodoroControls} />
-                </motion.div>
-              )}
-
-              {activeTab === 'creator' && <CreatorSection onPublish={(t) => console.log("Wygenerowano:", t.title)} />}
-              {activeTab === 'survey' && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><FeedbackSection /></motion.div>}
-              {activeTab === 'leaderboard' && <LeaderboardSection />}
-              {activeTab === 'clan' && user && (
-                <ClanPanel
-                  userId={user.uid}
-                  userName={stats.name}
-                  userAvatar={stats.avatar}
-                  userGems={stats.gems}
-                  userElo={stats.elo}
-                  onGemsSpent={(amount: number) => setStats(prev => ({ ...prev, gems: prev.gems - amount }))}
-                />
-              )}
-              {activeTab === 'friends' && user && (
-                <FriendsSection
-                  userId={user.uid}
-                  userName={stats.name}
-                  userAvatar={stats.avatar}
-                  onInviteSent={(inviteId, friendName) => setPendingInvite({ id: inviteId, friendName })}
-                />
-              )}
-
-              {activeTab === 'profile' && (
-                <ProfileSection
-                  stats={stats}
-                  onUpdate={(u) => {
-                    setStats(p => ({ ...p, ...u }));
-                    // Force immediate sync to Firebase (no debounce)
-                    setTimeout(() => forceSync(), 50);
-                  }}
-                  onResetAll={() => {
-                    setStats(INITIAL_STATS);
-                    setUnits(prev => prev.map(u => ({ ...u, topics: u.topics.map(t => ({ ...t, progress: 0, srsLevel: 0, nextReviewDate: undefined })) })));
-                    localStorage.clear();
-                    alert("Postępy zostały wyzerowane.");
-                  }}
-                  onLogout={handleLogout}
-                  isSoundEnabled={settings.sound}
-                  onToggleSound={() => handleToggleSettings('sound')}
-
-                />
-              )}
-
-              {activeTab === 'settings' && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                  <SettingsView settings={settings} onToggle={handleToggleSettings} onLogout={handleLogout} />
-                </motion.div>
-              )}
-
-              {activeTab === 'calendar' && (
-                <CalendarSection
-                  units={units}
-                  onStartQuiz={(topic) => {
-                    setActiveQuizTopic(topic);
-                  }}
-                />
-              )}
-
-              {activeTab === 'shop' && user && (
-                <ShopSection
-                  userId={user.uid}
-                  userGems={stats.gems}
-                  onPurchaseSuccess={(amount: number) => {
-                    // Update stats immediately to reflect deducted gems
-                    setStats(prev => ({ ...prev, gems: Math.max(0, prev.gems - amount) }));
-
-                    // forceSync will ensure local and remote are consistent
-                    setTimeout(() => {
-                      window.dispatchEvent(new Event('force-sync'));
-                    }, 100);
-                  }}
-                />
-              )}
             </AnimatePresence>
+
+            {activeTab === 'exams' && (
+              <ExamSection
+                onExamFinish={(xp) => {
+                  setStats(p => {
+                    const multi = p.activeBuffs?.find(b => b.type === 'xp_multiplier' && b.expiresAt > Date.now())?.multiplier || 1;
+                    return { ...p, xp: p.xp + Math.round(xp * multi), gems: p.gems + 5 };
+                  });
+                  recordDailyQuestions(1);
+                }}
+              />
+            )}
+
+            {activeTab === 'creator' && <CreatorSection onPublish={(t) => console.log("Wygenerowano:", t.title)} />}
+            {activeTab === 'survey' && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><FeedbackSection /></motion.div>}
+            {activeTab === 'leaderboard' && <LeaderboardSection />}
+            {activeTab === 'clan' && user && (
+              <ClanPanel
+                userId={user.uid}
+                userName={stats.name}
+                userAvatar={stats.avatar}
+                userGems={stats.gems}
+                userElo={stats.elo}
+                units={units}
+                onGemsSpent={(amount: number) => setStats(prev => ({ ...prev, gems: prev.gems - amount }))}
+              />
+            )}
+            {activeTab === 'friends' && user && (
+              <FriendsSection
+                userId={user.uid}
+                userName={stats.name}
+                userAvatar={stats.avatar}
+                onInviteSent={(inviteId, friendName) => setPendingInvite({ id: inviteId, friendName })}
+              />
+            )}
+
+            {activeTab === 'profile' && (
+              <ProfileSection
+                stats={stats}
+                onUpdate={(u) => {
+                  setStats(p => ({ ...p, ...u }));
+                  // Force immediate sync to Firebase (no debounce)
+                  setTimeout(() => forceSync(), 50);
+                }}
+                onResetAll={() => {
+                  setStats(INITIAL_STATS);
+                  setUnits(prev => prev.map(u => ({ ...u, topics: u.topics.map(t => ({ ...t, progress: 0, srsLevel: 0, nextReviewDate: undefined })) })));
+                  localStorage.clear();
+                  alert(t.common.resetSuccess);
+                }}
+                onLogout={handleLogout}
+                isSoundEnabled={settings.sound}
+                onToggleSound={() => handleToggleSettings('sound')}
+
+              />
+            )}
+
+            {activeTab === 'settings' && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <SettingsView
+                  settings={settings}
+                  onToggle={handleToggleSettings}
+                  onLogout={handleLogout}
+                  stats={stats}
+                  onUpdateStats={(newStats) => {
+                    setStats(newStats);
+                    // Debounced sync will happen automatically, but we can nudge it
+                    setTimeout(() => window.dispatchEvent(new Event('force-sync')), 50);
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {activeTab === 'support' && (
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <SupportSection
+                  stats={stats}
+                  onUpdateStats={(newStats) => {
+                    setStats(newStats);
+                    setTimeout(() => window.dispatchEvent(new Event('force-sync')), 50);
+                  }}
+                />
+              </motion.div>
+            )}
+
+            {activeTab === 'calendar' && (
+              <CalendarSection
+                units={units}
+                onStartQuiz={(topic) => {
+                  setActiveQuizTopic(topic);
+                }}
+              />
+            )}
+
+            {activeTab === 'shop' && user && (
+              <ShopSection
+                userId={user.uid}
+                userGems={stats.gems}
+                onPurchaseSuccess={(amount: number) => {
+                  // Update stats immediately to reflect deducted gems
+                  setStats(prev => ({ ...prev, gems: Math.max(0, prev.gems - amount) }));
+
+                  // forceSync will ensure local and remote are consistent
+                  setTimeout(() => {
+                    window.dispatchEvent(new Event('force-sync'));
+                  }, 100);
+                }}
+              />
+            )}
           </div>
         </main>
       </div>
@@ -1250,7 +1280,7 @@ const App: React.FC = () => {
                   t.id === showAddToCalendarPrompt.id ? { ...t, inCalendar: true } : t
                 )
               })));
-              showNotification(`"${showAddToCalendarPrompt.title}" dodany do kalendarza!`, 'success');
+              showNotification(t.common.addedToCalendar.replace('$1', showAddToCalendarPrompt.title), 'success');
               setShowAddToCalendarPrompt(null);
               setActiveQuizTopic(null);
             }}
@@ -1288,29 +1318,33 @@ const App: React.FC = () => {
       />
 
       {/* Global Inventory Modal */}
-      {showInventory && user && (
-        <InventoryModal
-          userId={user.uid}
-          onClose={() => setShowInventory(false)}
-          onOpenChest={(chestId, reward) => setOpeningChest({ chestId, reward })}
-        />
-      )}
+      {
+        showInventory && user && (
+          <InventoryModal
+            userId={user.uid}
+            onClose={() => setShowInventory(false)}
+            onOpenChest={(chestId, reward) => setOpeningChest({ chestId, reward })}
+          />
+        )
+      }
 
       {/* Global Level Reward Modal */}
-      {showLevelRewards && user && (
-        <LevelRewardModal
-          userId={user.uid}
-          unclaimedLevels={getUnclaimedMilestones(xpToLevel(stats.xp), stats.claimedLevelRewards || [])}
-          onClose={() => setShowLevelRewards(false)}
-          onClaimSuccess={(level) => {
-            setStats(prev => ({
-              ...prev,
-              claimedLevelRewards: [...(prev.claimedLevelRewards || []), level]
-            }));
-          }}
-          onOpenChest={(chestId, reward) => setOpeningChest({ chestId, reward })}
-        />
-      )}
+      {
+        showLevelRewards && user && (
+          <LevelRewardModal
+            userId={user.uid}
+            unclaimedLevels={getUnclaimedMilestones(xpToLevel(stats.xp), stats.claimedLevelRewards || [])}
+            onClose={() => setShowLevelRewards(false)}
+            onClaimSuccess={(level) => {
+              setStats(prev => ({
+                ...prev,
+                claimedLevelRewards: [...(prev.claimedLevelRewards || []), level]
+              }));
+            }}
+            onOpenChest={(chestId, reward) => setOpeningChest({ chestId, reward })}
+          />
+        )
+      }
 
       {/* 4. Chest Opening Animation Overlay */}
       <AnimatePresence>
@@ -1322,7 +1356,7 @@ const App: React.FC = () => {
           />
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 };
 

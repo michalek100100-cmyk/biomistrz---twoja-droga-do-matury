@@ -36,9 +36,7 @@ interface MenuItem {
 
 const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
 
-  const handleBuyCoffee = () => {
-    window.open('https://buycoffee.to/biomistrz?tab=subs', '_blank');
-  };
+
 
   const allMenuItems: MenuItem[] = [
     { id: 'learn', label: 'Nauka', icon: Home },
@@ -50,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'survey', label: 'Ankieta', icon: MessageSquare },
     { id: 'profile', label: 'Profil', icon: User },
     { id: 'settings', label: 'Ustawienia', icon: Settings },
-    { id: 'coffee', label: 'Wesprzyj mnie', icon: Coffee, action: handleBuyCoffee, special: true }
+    { id: 'support', label: 'Wesprzyj mnie', icon: Coffee, special: true }
   ];
 
   const menuItems = allMenuItems.filter(item => !item.hidden);

@@ -1,7 +1,7 @@
 // src/components/MoreSection.tsx
 // Tile-based hub for secondary features on mobile
-import React from 'react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../contexts/LanguageContext';
 import {
     FileText,
     MessageSquare,
@@ -9,8 +9,7 @@ import {
     Coffee,
     HelpCircle,
     Sparkles,
-    ExternalLink,
-    Brain
+    ExternalLink
 } from 'lucide-react';
 
 interface MoreSectionProps {
@@ -28,48 +27,40 @@ interface TileItem {
 }
 
 const MoreSection: React.FC<MoreSectionProps> = ({ onNavigate }) => {
+    const { t } = useLanguage();
 
     const tiles: TileItem[] = [
         {
             id: 'exams',
-            label: 'Arkusze Maturalne',
-            description: 'Rozwiąż prawdziwe zadania maturalne',
+            label: t.home.tiles.exams.label,
+            description: t.home.tiles.exams.desc,
             icon: FileText,
             color: 'text-indigo-600',
             bgColor: 'bg-indigo-50 '
         },
         {
-            id: 'studyhelp',
-            label: 'Pomoc w nauce',
-            description: 'Pomodoro + szybkie czytanie RSVP',
-            icon: Brain,
-            color: 'text-teal-600',
-            bgColor: 'bg-teal-50 '
-        },
-        {
             id: 'survey',
-            label: 'Ankieta',
-            description: 'Pomóż nam ulepszyć aplikację',
+            label: t.home.tiles.survey.label,
+            description: t.home.tiles.survey.desc,
             icon: MessageSquare,
             color: 'text-pink-600',
             bgColor: 'bg-pink-50 '
         },
         {
             id: 'settings',
-            label: 'Ustawienia',
-            description: 'Dostosuj aplikację do siebie',
+            label: t.home.tiles.settings.label,
+            description: t.home.tiles.settings.desc,
             icon: Settings,
             color: 'text-gray-600',
             bgColor: 'bg-gray-50 '
         },
         {
-            id: 'coffee',
-            label: 'Wesprzyj Projekt',
-            description: 'Kup mi kawę ☕️',
+            id: 'support',
+            label: t.home.tiles.support.label,
+            description: t.home.tiles.support.desc,
             icon: Coffee,
             color: 'text-rose-600',
-            bgColor: 'bg-rose-50 ',
-            external: 'https://buycoffee.to/biomistrz?tab=subs'
+            bgColor: 'bg-rose-50 '
         },
     ];
 

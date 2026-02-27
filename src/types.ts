@@ -38,6 +38,9 @@ export interface UserStats {
   inventory?: InventoryItem[];    // Items owned by the user
   activeBuffs?: ActiveBuff[];     // Temporary buffs acting on the user (XP/ELO multipliers)
   claimedLevelRewards?: number[]; // Array of level milestones already claimed
+  language?: string;              // ISO language code (e.g. 'pl', 'en')
+  country?: string;               // ISO country code (e.g. 'PL', 'US')
+  supportValue?: number;          // Total amount contributed to the app (simulated currency value)
 }
 
 // --- NEW DATA STRUCTURES FOR INVENTORY SYSTEM ---
