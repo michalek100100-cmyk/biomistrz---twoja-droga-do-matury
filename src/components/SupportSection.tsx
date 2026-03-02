@@ -13,6 +13,7 @@ import {
 import { showRewardedAd } from '../services/adService';
 import { UserStats } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
+import { CurrencyTranslator } from '../services/CurrencyService';
 
 interface SupportSectionProps {
     stats: UserStats;
@@ -20,7 +21,7 @@ interface SupportSectionProps {
 }
 
 const SupportSection: React.FC<SupportSectionProps> = ({ stats, onUpdateStats }) => {
-    const { t } = useLanguage();
+    const { t, language: lang } = useLanguage();
     const [isWatching, setIsWatching] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [adError, setAdError] = useState(false);
@@ -31,7 +32,7 @@ const SupportSection: React.FC<SupportSectionProps> = ({ stats, onUpdateStats })
         try {
             await showRewardedAd(() => {
                 // Ad completed successfully
-                const adValue = 0.05; // Simulated market value in PLN
+                const adValue = 0.02; // Updated from 0.05 PLN
                 const newStats = {
                     ...stats,
                     supportValue: (stats.supportValue || 0) + adValue
@@ -59,8 +60,12 @@ const SupportSection: React.FC<SupportSectionProps> = ({ stats, onUpdateStats })
                     </div>
                     <h2 className="support-title text-2xl font-black mb-2">{t.support.title}</h2>
                     <div className="support-value-container flex items-baseline gap-1">
-                        <span className="support-value text-4xl font-black">{(stats.supportValue || 0).toFixed(2)}</span>
-                        <span className="support-currency text-xl font-bold opacity-80">{t.support.currency}</span>
+                        <span className="support-value text-4xl font-black">
+                            {CurrencyTranslator.convert(stats.supportValue || 0, lang).value.toFixed(2)}
+                        </span>
+                        <span className="support-currency text-xl font-bold opacity-80">
+                            {CurrencyTranslator.convert(stats.supportValue || 0, lang).symbol}
+                        </span>
                     </div>
                     <p className="support-description mt-2 text-rose-100 text-sm font-medium">
                         {t.support.contributionDesc}
@@ -110,7 +115,9 @@ const SupportSection: React.FC<SupportSectionProps> = ({ stats, onUpdateStats })
                     ) : (
                         <>
                             <Sparkles className="w-5 h-5" />
-                            <span className="support-button-text">{t.support.addSupportButton}</span>
+                            <span className="support-button-text">
+                                {CurrencyTranslator.translateSupportString(t.support.addSupportButton, 0.02, lang)}
+                            </span>
                         </>
                     )}
                 </button>
@@ -144,7 +151,7 @@ const SupportSection: React.FC<SupportSectionProps> = ({ stats, onUpdateStats })
             {/* Direct Support Links */}
             <div className="support-links-container grid grid-cols-1 gap-4">
                 <a
-                    href="https://buycoffee.to/biomistrz"
+                    href="https://buymeacoffee.com/bioly"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="support-link-buycoffee flex items-center gap-4 p-5 bg-[#FFDD00] rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-transform shadow-sm"

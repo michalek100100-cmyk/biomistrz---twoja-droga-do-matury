@@ -133,6 +133,12 @@ export interface TranslationSchema {
             settings: { label: string; desc: string };
             support: { label: string; desc: string };
             calendar: { label: string; desc: string };
+            anatomy: {
+                label: string;
+                desc: string;
+                labels: Record<string, string>;
+                stillInPreparation: string;
+            };
         };
         streakDays: string;
         streakReminder: string;
@@ -184,6 +190,12 @@ export interface TranslationSchema {
         check: string;
         true: string;
         false: string;
+        resultTitle: string;
+        resultTime: string;
+        resultAccuracy: string;
+        resultBetterThan: string;
+        resultBetterThanSuffix: string;
+        resultContinue: string;
     };
     friends: {
         title: string;
@@ -615,6 +627,10 @@ export interface TranslationSchema {
         repeat: string;
         emptyTitle: string;
         emptyDesc: string;
+        addPromptTitle: string;
+        addPromptDesc: string;
+        addPromptYes: string;
+        addPromptNo: string;
     };
     closet: {
         title: string;
